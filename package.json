@@ -4,10 +4,20 @@
   "packageManager": "pnpm@10.28.0",
   "scripts": {
     "build": "pnpm -r run build",
-    "test": "pnpm -r run test"
+    "test": "pnpm -r run test",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{js,ts,json}": [
+      "biome check --write --no-errors-on-unmatched"
+    ]
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.11",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
     "typescript": "^5.9.3"
   }
 }
