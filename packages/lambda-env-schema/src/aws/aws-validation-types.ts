@@ -7,9 +7,11 @@
  */
 
 // Re-export all validators
+export { isValidApiGatewayId } from './api-gateway-validators';
 export {
   AWS_REGIONS, isValidAWSAccountId, isValidAWSRegion, type AWSRegion
 } from './aws-regions';
+export { isValidCloudFrontDistId } from './cloudfront-validators';
 export {
   extractAccountIdFromDynamoDBArn,
   extractRegionFromDynamoDBArn,
@@ -42,6 +44,12 @@ export {
   isValidSQSQueueArn,
   isValidSQSQueueUrl
 } from './sqs-validators';
+export {
+  isValidEc2InstanceId,
+  isValidSecurityGroupId,
+  isValidSubnetId,
+  isValidVpcId
+} from './vpc-validators';
 
 /**
  * Scope configuration for ARN validation.
