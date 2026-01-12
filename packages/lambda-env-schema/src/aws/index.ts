@@ -21,8 +21,10 @@
 // =============================================================================
 
 export {
-    AWS_REGIONS, isValidAWSAccountId,
-    isValidAWSRegion, type AWSRegion
+  AWS_REGIONS,
+  type AWSRegion,
+  isValidAWSAccountId,
+  isValidAWSRegion,
 } from './aws-regions';
 
 // =============================================================================
@@ -30,8 +32,10 @@ export {
 // =============================================================================
 
 export type {
-    AWSValidationType,
-    ValidationRule
+  AWSParsedType,
+  AWSValidationOnlyType,
+  AWSValidationType,
+  ValidationRule,
 } from './aws-validation-types';
 
 // =============================================================================
@@ -39,19 +43,19 @@ export type {
 // =============================================================================
 
 export type {
-    BaseParsedValue,
-    ParsedArn,
-    ParsedDynamoDBTableArn,
-    ParsedIAMRoleArn,
-    ParsedKMSKeyArn,
-    ParsedLambdaFunctionArn,
-    ParsedRDSEndpoint,
-    ParsedS3Arn,
-    ParsedS3Uri,
-    ParsedSecretsManagerArn,
-    ParsedSNSTopicArn,
-    ParsedSQSQueueArn,
-    ParsedSQSQueueUrl
+  BaseParsedValue,
+  ParsedArn,
+  ParsedDynamoDBTableArn,
+  ParsedIAMRoleArn,
+  ParsedKMSKeyArn,
+  ParsedLambdaFunctionArn,
+  ParsedRDSEndpoint,
+  ParsedS3Arn,
+  ParsedS3Uri,
+  ParsedSecretsManagerArn,
+  ParsedSNSTopicArn,
+  ParsedSQSQueueArn,
+  ParsedSQSQueueUrl,
 } from './parsed-types';
 
 // =============================================================================
@@ -66,64 +70,82 @@ export { isValidArn, parseArn } from './arn-validators';
 export { isValidCloudFrontDistId } from './cloudfront-validators';
 // DynamoDB
 export {
-    extractAccountIdFromDynamoDBArn,
-    extractRegionFromDynamoDBArn,
-    isValidDynamoDBTableArn,
-    isValidDynamoDBTableName
+  extractAccountIdFromDynamoDBArn,
+  extractRegionFromDynamoDBArn,
+  isValidDynamoDBTableArn,
+  isValidDynamoDBTableName,
+  parseDynamoDBTableArn,
 } from './dynamodb-validators';
 // EventBridge
 export { isValidEventBusName } from './eventbridge-validators';
 // IAM
 export {
-    extractAccountIdFromIAMArn,
-    extractRegionFromIAMArn,
-    isValidIAMRoleArn,
-    isValidIAMUserArn
+  extractAccountIdFromIAMArn,
+  extractRegionFromIAMArn,
+  isValidIAMRoleArn,
+  isValidIAMUserArn,
+  parseIAMRoleArn,
 } from './iam-validators';
 // KMS
 export {
-    extractAccountIdFromKMSKeyArn,
-    extractRegionFromKMSKeyArn,
-    isValidKMSKeyArn,
-    isValidKMSKeyId
+  extractAccountIdFromKMSKeyArn,
+  extractRegionFromKMSKeyArn,
+  isValidKMSKeyArn,
+  isValidKMSKeyId,
+  parseKMSKeyArn,
 } from './kms-validators';
 // Lambda
-export { isValidLambdaFunctionArn, isValidLambdaFunctionName, parseLambdaFunctionArn } from './lambda-validators';
+export {
+  isValidLambdaFunctionArn,
+  isValidLambdaFunctionName,
+  parseLambdaFunctionArn,
+} from './lambda-validators';
 // RDS
 export {
-    extractRegionFromRDSEndpoint,
-    isValidRDSClusterId,
-    isValidRDSEndpoint
+  extractRegionFromRDSEndpoint,
+  isValidRDSClusterId,
+  isValidRDSEndpoint,
+  parseRDSEndpoint,
 } from './rds-validators';
 // S3
-export { isValidS3Arn, isValidS3BucketName, isValidS3Uri, parseS3Arn, parseS3Uri } from './s3-validators';
+export {
+  isValidS3Arn,
+  isValidS3BucketName,
+  isValidS3Uri,
+  parseS3Arn,
+  parseS3Uri,
+} from './s3-validators';
 // Secrets Manager
 export {
-    extractAccountIdFromSecretsManagerArn,
-    extractRegionFromSecretsManagerArn,
-    isValidSecretsManagerArn
+  extractAccountIdFromSecretsManagerArn,
+  extractRegionFromSecretsManagerArn,
+  isValidSecretsManagerArn,
+  parseSecretsManagerArn,
 } from './secrets-manager-validators';
 // SNS
 export {
-    extractAccountIdFromSNSTopicArn,
-    extractRegionFromSNSTopicArn,
-    isValidSNSTopicArn
+  extractAccountIdFromSNSTopicArn,
+  extractRegionFromSNSTopicArn,
+  isValidSNSTopicArn,
+  parseSNSTopicArn,
 } from './sns-validators';
 // SQS
 export {
-    extractAccountIdFromSQSQueueArn,
-    extractAccountIdFromSQSQueueUrl,
-    extractRegionFromSQSQueueArn,
-    extractRegionFromSQSQueueUrl,
-    isValidSQSQueueArn,
-    isValidSQSQueueUrl
+  extractAccountIdFromSQSQueueArn,
+  extractAccountIdFromSQSQueueUrl,
+  extractRegionFromSQSQueueArn,
+  extractRegionFromSQSQueueUrl,
+  isValidSQSQueueArn,
+  isValidSQSQueueUrl,
+  parseSQSQueueArn,
+  parseSQSQueueUrl,
 } from './sqs-validators';
 // SSM
 export { isValidSSMParameterName } from './ssm-validators';
 // VPC & EC2
 export {
-    isValidEc2InstanceId,
-    isValidSecurityGroupId,
-    isValidSubnetId,
-    isValidVpcId
+  isValidEc2InstanceId,
+  isValidSecurityGroupId,
+  isValidSubnetId,
+  isValidVpcId,
 } from './vpc-validators';

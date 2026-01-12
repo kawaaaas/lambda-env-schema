@@ -132,7 +132,6 @@ export function isValidRDSClusterId(value: string): boolean {
   return true;
 }
 
-
 /**
  * Parses an RDS Endpoint into its components.
  *

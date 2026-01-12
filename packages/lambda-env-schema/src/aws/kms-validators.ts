@@ -127,7 +127,6 @@ export function extractAccountIdFromKMSKeyArn(
   return undefined;
 }
 
-
 /**
  * Parses a KMS Key ARN into its components.
  *
@@ -155,7 +154,9 @@ export function parseKMSKeyArn(value: string): ParsedKMSKeyArn | null {
   const accountId = extractAccountIdFromKMSKeyArn(value);
 
   // arn:aws:kms:<region>:<account-id>:key/<key-id>
-  const match = value.match(/key\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i);
+  const match = value.match(
+    /key\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i
+  );
   if (!match || !region || !accountId) return null;
 
   return {

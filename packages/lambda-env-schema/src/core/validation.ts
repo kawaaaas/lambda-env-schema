@@ -30,9 +30,39 @@ import {
   isValidSSMParameterName,
   isValidSubnetId,
   isValidVpcId,
+  parseArn,
+  parseDynamoDBTableArn,
+  parseIAMRoleArn,
+  parseKMSKeyArn,
+  parseLambdaFunctionArn,
+  parseRDSEndpoint,
+  parseS3Arn,
+  parseS3Uri,
+  parseSecretsManagerArn,
+  parseSNSTopicArn,
+  parseSQSQueueArn,
+  parseSQSQueueUrl,
 } from '../aws/aws-validation-types';
+import type {
+  ParsedArn,
+  ParsedDynamoDBTableArn,
+  ParsedIAMRoleArn,
+  ParsedKMSKeyArn,
+  ParsedLambdaFunctionArn,
+  ParsedRDSEndpoint,
+  ParsedS3Arn,
+  ParsedS3Uri,
+  ParsedSecretsManagerArn,
+  ParsedSNSTopicArn,
+  ParsedSQSQueueArn,
+  ParsedSQSQueueUrl,
+} from '../aws/parsed-types';
 import type { ValidationError } from '../share/errors';
-import type { SchemaItem } from '../share/types';
+import type {
+  AWSParsedType,
+  AWSValidationOnlyType,
+  SchemaItem,
+} from '../share/types';
 
 /**
  * Formats a value for display in error messages.
@@ -383,9 +413,11 @@ export const AWS_VALIDATION_DESCRIPTIONS: Record<AWSValidationType, string> = {
     'Must be a valid IAM Role ARN (arn:aws:iam::<account-id>:role/<role-name>)',
   'iam-user-arn':
     'Must be a valid IAM User ARN (arn:aws:iam::<account-id>:user/<user-name>)',
+  arn: 'Must be a valid ARN (arn:aws:<service>:<region>:<account-id>:<resource>)',
   's3-bucket-name': 'Must be 3-63 lowercase letters, numbers, and hyphens',
   's3-arn':
     'Must be a valid S3 ARN (arn:aws:s3:::<bucket-name>[/<object-key>])',
+  's3-uri': 'Must be a valid S3 URI (s3://<bucket>/<key>)',
   'dynamodb-table-name':
     'Must be 3-255 characters containing alphanumeric, _, -, and .',
   'dynamodb-table-arn':
@@ -396,6 +428,8 @@ export const AWS_VALIDATION_DESCRIPTIONS: Record<AWSValidationType, string> = {
     'Must be 1-63 characters, start with a letter, contain alphanumeric and hyphens',
   'lambda-function-name':
     'Must be 1-64 characters containing alphanumeric, -, and _',
+  'lambda-function-arn':
+    'Must be a valid Lambda Function ARN (arn:aws:lambda:<region>:<account-id>:function:<function-name>[:<alias>])',
   'sqs-queue-url':
     'Must be a valid SQS queue URL (https://sqs.<region>.amazonaws.com/<account-id>/<queue-name>)',
   'sqs-queue-arn':
@@ -585,4 +619,233 @@ export function checkAWSValidation(
   }
 
   return { valid: true };
+}
+
+// ============================================================================
+// AWS Parsed Types Support
+// ============================================================================
+
+/**
+ * Union type for all parsed AWS resource values.
+ */
+export type ParsedValue =
+  | ParsedS3Arn
+  | ParsedS3Uri
+  | ParsedSQSQueueUrl
+  | ParsedSQSQueueArn
+  | ParsedSNSTopicArn
+  | ParsedDynamoDBTableArn
+  | ParsedRDSEndpoint
+  | ParsedLambdaFunctionArn
+  | ParsedKMSKeyArn
+  | ParsedSecretsManagerArn
+  | ParsedIAMRoleArn
+  | ParsedArn;
+
+/**
+ * Parser function type for AWS resource values.
+ */
+type AWSParser<T extends ParsedValue> = (value: string) => T | null;
+
+/**
+ * Registry of parser functions for AWS parsed types.
+ *
+ * Each parser function takes a string value and returns a parsed object
+ * with extracted properties, or null if the value is invalid.
+ *
+ * @example
+ * ```typescript
+ * const parser = AWS_PARSERS['sqs-queue-url'];
+ * const result = parser('https://sqs.us-east-1.amazonaws.com/123456789012/my-queue');
+ * // { value: '...', queueName: 'my-queue', accountId: '123456789012', region: 'us-east-1', isFifo: false }
+ * ```
+ */
+export const AWS_PARSERS: Record<AWSParsedType, AWSParser<ParsedValue>> = {
+  's3-arn': parseS3Arn,
+  's3-uri': parseS3Uri,
+  'sqs-queue-url': parseSQSQueueUrl,
+  'sqs-queue-arn': parseSQSQueueArn,
+  'sns-topic-arn': parseSNSTopicArn,
+  'dynamodb-table-arn': parseDynamoDBTableArn,
+  'rds-endpoint': parseRDSEndpoint,
+  'lambda-function-arn': parseLambdaFunctionArn,
+  'kms-key-arn': parseKMSKeyArn,
+  'secrets-manager-arn': parseSecretsManagerArn,
+  'iam-role-arn': parseIAMRoleArn,
+  arn: parseArn,
+};
+
+/**
+ * Registry of validator functions for AWS validation-only types.
+ *
+ * Each validator function takes a string value and returns true if valid.
+ */
+export const AWS_VALIDATORS: Record<
+  AWSValidationOnlyType,
+  (value: string) => boolean
+> = {
+  'aws-region': isValidAWSRegion,
+  'aws-account-id': isValidAWSAccountId,
+  's3-bucket-name': isValidS3BucketName,
+  'dynamodb-table-name': isValidDynamoDBTableName,
+  'rds-cluster-id': isValidRDSClusterId,
+  'lambda-function-name': isValidLambdaFunctionName,
+  'event-bus-name': isValidEventBusName,
+  'api-gateway-id': isValidApiGatewayId,
+  'vpc-id': isValidVpcId,
+  'subnet-id': isValidSubnetId,
+  'security-group-id': isValidSecurityGroupId,
+  'ec2-instance-id': isValidEc2InstanceId,
+  'cloudfront-dist-id': isValidCloudFrontDistId,
+  'kms-key-id': isValidKMSKeyId,
+  'ssm-parameter-name': isValidSSMParameterName,
+  'iam-user-arn': isValidIAMUserArn,
+};
+
+/**
+ * List of all AWS parsed types.
+ */
+const AWS_PARSED_TYPES: readonly AWSParsedType[] = [
+  's3-arn',
+  's3-uri',
+  'sqs-queue-url',
+  'sqs-queue-arn',
+  'sns-topic-arn',
+  'dynamodb-table-arn',
+  'rds-endpoint',
+  'lambda-function-arn',
+  'kms-key-arn',
+  'secrets-manager-arn',
+  'iam-role-arn',
+  'arn',
+] as const;
+
+/**
+ * List of all AWS validation-only types.
+ */
+const AWS_VALIDATION_ONLY_TYPES: readonly AWSValidationOnlyType[] = [
+  'aws-region',
+  'aws-account-id',
+  's3-bucket-name',
+  'dynamodb-table-name',
+  'rds-cluster-id',
+  'lambda-function-name',
+  'event-bus-name',
+  'api-gateway-id',
+  'vpc-id',
+  'subnet-id',
+  'security-group-id',
+  'ec2-instance-id',
+  'cloudfront-dist-id',
+  'kms-key-id',
+  'ssm-parameter-name',
+  'iam-user-arn',
+] as const;
+
+/**
+ * Checks if a type is an AWS parsed type.
+ *
+ * @param type - The type to check
+ * @returns true if the type is an AWS parsed type
+ */
+export function isAWSParsedType(type: string): type is AWSParsedType {
+  return AWS_PARSED_TYPES.includes(type as AWSParsedType);
+}
+
+/**
+ * Checks if a type is an AWS validation-only type.
+ *
+ * @param type - The type to check
+ * @returns true if the type is an AWS validation-only type
+ */
+export function isAWSValidationOnlyType(
+  type: string
+): type is AWSValidationOnlyType {
+  return AWS_VALIDATION_ONLY_TYPES.includes(type as AWSValidationOnlyType);
+}
+
+/**
+ * Checks if a type is any AWS resource type (parsed or validation-only).
+ *
+ * @param type - The type to check
+ * @returns true if the type is an AWS resource type
+ */
+export function isAWSResourceType(type: string): boolean {
+  return isAWSParsedType(type) || isAWSValidationOnlyType(type);
+}
+
+/**
+ * Result of validating and parsing an AWS resource value.
+ */
+export type ValidateAndParseResult =
+  | { success: true; value: ParsedValue | string }
+  | { success: false; errors: ValidationError[] };
+
+/**
+ * Validates and parses a value based on its AWS resource type.
+ *
+ * For AWS parsed types (e.g., 'sqs-queue-url', 's3-arn'), this function:
+ * 1. Validates the value against the expected format
+ * 2. Parses the value into a structured object with extracted properties
+ *
+ * For AWS validation-only types (e.g., 'aws-region', 's3-bucket-name'), this function:
+ * 1. Validates the value against the expected format
+ * 2. Returns the original string value
+ *
+ * @param key - The environment variable name
+ * @param type - The AWS resource type
+ * @param value - The string value to validate and parse
+ * @param isSecret - Whether the value should be masked in error messages
+ * @returns ValidateAndParseResult with either the parsed/validated value or errors
+ *
+ * @example
+ * ```typescript
+ * // AWS parsed type - returns ParsedValue
+ * validateAndParse('QUEUE_URL', 'sqs-queue-url', 'https://sqs.us-east-1.amazonaws.com/123456789012/my-queue', false);
+ * // { success: true, value: { value: '...', queueName: 'my-queue', accountId: '123456789012', region: 'us-east-1', isFifo: false } }
+ *
+ * // AWS validation-only type - returns string
+ * validateAndParse('AWS_REGION', 'aws-region', 'us-east-1', false);
+ * // { success: true, value: 'us-east-1' }
+ *
+ * // Invalid value - returns errors
+ * validateAndParse('QUEUE_URL', 'sqs-queue-url', 'invalid-url', false);
+ * // { success: false, errors: [{ key: 'QUEUE_URL', message: 'Invalid sqs-queue-url: ...' }] }
+ * ```
+ */
+export function validateAndParse(
+  key: string,
+  type: AWSParsedType | AWSValidationOnlyType,
+  value: string,
+  isSecret: boolean
+): ValidateAndParseResult {
+  // Handle AWS parsed types
+  if (isAWSParsedType(type)) {
+    const parser = AWS_PARSERS[type];
+    const parsed = parser(value);
+
+    if (!parsed) {
+      return {
+        success: false,
+        errors: [formatAWSValidationError(key, type, value, isSecret)],
+      };
+    }
+
+    return { success: true, value: parsed };
+  }
+
+  // Handle AWS validation-only types
+  if (isAWSValidationOnlyType(type)) {
+    const validator = AWS_VALIDATORS[type];
+    if (!validator(value)) {
+      return {
+        success: false,
+        errors: [formatAWSValidationError(key, type, value, isSecret)],
+      };
+    }
+    return { success: true, value };
+  }
+
+  // Unknown type - should not happen with proper typing
+  return { success: true, value };
 }

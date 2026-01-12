@@ -2,6 +2,7 @@
  * SNS (Simple Notification Service) validators and parsers.
  */
 
+import type { ParsedSNSTopicArn } from './parsed-types';
 
 /**
  * Regular expression pattern for SNS topic ARN validation.
@@ -108,7 +109,6 @@ export function extractAccountIdFromSNSTopicArn(
   }
   return undefined;
 }
-
 
 /**
  * Parses an SNS Topic ARN into its components.

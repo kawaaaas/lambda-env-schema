@@ -15,11 +15,13 @@ import {
 } from './coercion';
 import {
   applyDefault,
-  checkAWSValidation,
   checkConstraints,
   checkEnum,
   checkRequired,
   formatValue,
+  isAWSParsedType,
+  isAWSValidationOnlyType,
+  validateAndParse,
 } from './validation';
 
 /**
@@ -65,7 +67,22 @@ function coerceValue(
 ):
   | { success: true; value: unknown }
   | { success: false; errors: ValidationError[] } {
-  switch (schema.type) {
+  const schemaType = schema.type;
+
+  // Handle AWS parsed types (e.g., 'sqs-queue-url', 's3-arn')
+  // These return ParsedValue objects with extracted properties
+  if (isAWSParsedType(schemaType)) {
+    return validateAndParse(key, schemaType, value, isSecret);
+  }
+
+  // Handle AWS validation-only types (e.g., 'aws-region', 's3-bucket-name')
+  // These validate the format and return the original string
+  if (isAWSValidationOnlyType(schemaType)) {
+    return validateAndParse(key, schemaType, value, isSecret);
+  }
+
+  // Handle primitive types
+  switch (schemaType) {
     case 'string': {
       const result = coerceString(value);
       if (!result.success) {
@@ -74,7 +91,7 @@ function coerceValue(
           errors: [
             {
               key,
-              message: result.error,
+              message: (result as { success: false; error: string }).error,
               received: formatValue(value, isSecret),
             },
           ],
@@ -91,7 +108,7 @@ function coerceValue(
           errors: [
             {
               key,
-              message: result.error,
+              message: (result as { success: false; error: string }).error,
               received: formatValue(value, isSecret),
             },
           ],
@@ -108,7 +125,7 @@ function coerceValue(
           errors: [
             {
               key,
-              message: result.error,
+              message: (result as { success: false; error: string }).error,
               received: formatValue(value, isSecret),
             },
           ],
@@ -126,7 +143,7 @@ function coerceValue(
           errors: [
             {
               key,
-              message: result.error,
+              message: (result as { success: false; error: string }).error,
               received: formatValue(value, isSecret),
             },
           ],
@@ -143,7 +160,7 @@ function coerceValue(
           errors: [
             {
               key,
-              message: result.error,
+              message: (result as { success: false; error: string }).error,
               received: formatValue(value, isSecret),
             },
           ],
@@ -172,11 +189,17 @@ function validateItem(
   | { success: false; errors: ValidationError[] } {
   const isSecret = schema.secret === true;
   const errors: ValidationError[] = [];
+  const schemaType = schema.type;
 
   // Step 1: Check required
   const requiredResult = checkRequired(key, schema, rawValue);
   if (!requiredResult.valid) {
-    return { success: false, errors: [requiredResult.error] };
+    return {
+      success: false,
+      errors: [
+        (requiredResult as { valid: false; error: ValidationError }).error,
+      ],
+    };
   }
 
   // Step 2: Apply default
@@ -188,15 +211,21 @@ function validateItem(
   const valueToProcess = defaultResult.value;
 
   // If the value is already the default (not a string), skip coercion
+  // Note: AWS parsed types don't support defaults, so this only applies to primitive types
   if (typeof valueToProcess !== 'string') {
     const enumResult = checkEnum(key, schema, valueToProcess);
     if (!enumResult.valid) {
-      errors.push(enumResult.error);
+      errors.push(
+        (enumResult as { valid: false; error: ValidationError }).error
+      );
     }
 
     const constraintResult = checkConstraints(key, schema, valueToProcess);
     if (!constraintResult.valid) {
-      errors.push(...constraintResult.errors);
+      errors.push(
+        ...(constraintResult as { valid: false; errors: ValidationError[] })
+          .errors
+      );
     }
 
     if (errors.length > 0) {
@@ -205,41 +234,37 @@ function validateItem(
     return { success: true, value: valueToProcess };
   }
 
-  // Step 3: Coerce the string value
+  // Step 3: Coerce the string value (includes AWS type validation and parsing)
   const coercionResult = coerceValue(key, schema, valueToProcess, isSecret);
   if (!coercionResult.success) {
-    return { success: false, errors: coercionResult.errors };
+    return {
+      success: false,
+      errors: (coercionResult as { success: false; errors: ValidationError[] })
+        .errors,
+    };
   }
 
   const coercedValue = coercionResult.value;
 
-  // Step 4: Check enum
+  // For AWS resource types, skip enum and constraint checks
+  // AWS types have their own validation logic and don't support these options
+  if (isAWSParsedType(schemaType) || isAWSValidationOnlyType(schemaType)) {
+    return { success: true, value: coercedValue };
+  }
+
+  // Step 4: Check enum (only for primitive types)
   const enumResult = checkEnum(key, schema, coercedValue);
   if (!enumResult.valid) {
-    errors.push(enumResult.error);
+    errors.push((enumResult as { valid: false; error: ValidationError }).error);
   }
 
-  // Step 5: Check constraints
+  // Step 5: Check constraints (only for primitive types)
   const constraintResult = checkConstraints(key, schema, coercedValue);
   if (!constraintResult.valid) {
-    errors.push(...constraintResult.errors);
-  }
-
-  // Step 6: Check AWS validation (only for string schemas with validation option)
-  if (
-    schema.type === 'string' &&
-    schema.validation &&
-    typeof coercedValue === 'string'
-  ) {
-    const awsResult = checkAWSValidation(
-      key,
-      coercedValue,
-      schema.validation,
-      isSecret
+    errors.push(
+      ...(constraintResult as { valid: false; errors: ValidationError[] })
+        .errors
     );
-    if (!awsResult.valid) {
-      errors.push(...awsResult.errors);
-    }
   }
 
   if (errors.length > 0) {
@@ -278,6 +303,7 @@ export function toCamelCase(str: string): string {
  *
  * @example
  * ```typescript
+ * // Basic usage with primitive types
  * const env = createEnv({
  *   PORT: { type: 'number', default: 3000 },
  *   API_KEY: { type: 'string', required: true, secret: true },
@@ -290,6 +316,17 @@ export function toCamelCase(str: string): string {
  * // env.NODE_ENV is 'development' | 'production' | undefined
  * // env.FEATURES is string[]
  * // env.aws.region is string | undefined
+ *
+ * // AWS resource types with property extraction
+ * const awsEnv = createEnv({
+ *   QUEUE_URL: { type: 'sqs-queue-url', required: true },
+ *   BUCKET_ARN: { type: 's3-arn', required: true },
+ *   AWS_REGION: { type: 'aws-region', required: true },
+ * });
+ *
+ * // awsEnv.QUEUE_URL.queueName, awsEnv.QUEUE_URL.region, awsEnv.QUEUE_URL.accountId
+ * // awsEnv.BUCKET_ARN.bucketName, awsEnv.BUCKET_ARN.key, awsEnv.BUCKET_ARN.isObject
+ * // awsEnv.AWS_REGION is string (validation-only type)
  * ```
  */
 export function createEnv<
@@ -307,7 +344,10 @@ export function createEnv<
     const validationResult = validateItem(key, schemaItem, rawValue);
 
     if (!validationResult.success) {
-      errors.push(...validationResult.errors);
+      errors.push(
+        ...(validationResult as { success: false; errors: ValidationError[] })
+          .errors
+      );
     } else {
       const outputKey = namingStrategy === 'camelCase' ? toCamelCase(key) : key;
       result[outputKey] = validationResult.value;

@@ -61,7 +61,6 @@ export interface ParsedSQSQueueArn extends BaseParsedValue {
   isFifo: boolean;
 }
 
-
 /**
  * Parsed SNS Topic ARN value.
  * Format: arn:aws:sns:<region>:<account-id>:<topic-name>

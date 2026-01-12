@@ -132,7 +132,6 @@ export function isValidS3Arn(value: string): boolean {
   return S3_ARN_PATTERN.test(value);
 }
 
-
 /**
  * Regular expression pattern for S3 URI validation.
  *

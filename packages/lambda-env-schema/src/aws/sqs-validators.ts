@@ -197,7 +197,6 @@ export function extractAccountIdFromSQSQueueArn(
   return undefined;
 }
 
-
 /**
  * Parses an SQS Queue URL into its components.
  *

@@ -10,7 +10,8 @@ import type { ParsedIAMRoleArn } from './parsed-types';
  * Path: optional, can contain multiple segments (e.g., /service-role/)
  * Role name: 1-64 characters, alphanumeric plus +=,.@_-
  */
-const IAM_ROLE_ARN_PATTERN = /^arn:aws:iam::\d{12}:role(\/[\w+=,.@-]+)*\/[\w+=,.@-]{1,64}$/;
+const IAM_ROLE_ARN_PATTERN =
+  /^arn:aws:iam::\d{12}:role(\/[\w+=,.@-]+)*\/[\w+=,.@-]{1,64}$/;
 
 /**
  * Regular expression pattern for IAM User ARN validation.
@@ -125,7 +126,6 @@ export function extractRegionFromIAMArn(_value: string): string | undefined {
   return undefined;
 }
 
-
 /**
  * Parses an IAM Role ARN into its components.
  *
@@ -167,10 +167,10 @@ export function parseIAMRoleArn(value: string): ParsedIAMRoleArn | null {
 
   const rolePart = rolePartMatch[1];
   const segments = rolePart.split('/');
-  
+
   // The last segment is the role name
   const roleName = segments[segments.length - 1];
-  
+
   // If there are more than one segment, the rest is the path
   let path: string | undefined;
   if (segments.length > 1) {

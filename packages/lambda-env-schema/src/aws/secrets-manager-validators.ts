@@ -105,7 +105,6 @@ export function extractAccountIdFromSecretsManagerArn(
   return undefined;
 }
 
-
 /**
  * Parses a Secrets Manager ARN into its components.
  *
@@ -134,7 +133,9 @@ export function extractAccountIdFromSecretsManagerArn(
  * // null
  * ```
  */
-export function parseSecretsManagerArn(value: string): ParsedSecretsManagerArn | null {
+export function parseSecretsManagerArn(
+  value: string
+): ParsedSecretsManagerArn | null {
   if (!isValidSecretsManagerArn(value)) return null;
 
   const region = extractRegionFromSecretsManagerArn(value);

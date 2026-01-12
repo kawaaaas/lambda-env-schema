@@ -301,7 +301,7 @@ describe('AWS validation types', () => {
   describe('aws-region validation', () => {
     it('accepts valid AWS region', () => {
       const env = createEnv(
-        { AWS_REGION: { type: 'string', validation: 'aws-region' } },
+        { AWS_REGION: { type: 'aws-region' } },
         { env: { AWS_REGION: 'us-east-1' } }
       );
       expect(env.AWS_REGION).toBe('us-east-1');
@@ -310,7 +310,7 @@ describe('AWS validation types', () => {
     it('rejects invalid AWS region', () => {
       expect(() =>
         createEnv(
-          { AWS_REGION: { type: 'string', validation: 'aws-region' } },
+          { AWS_REGION: { type: 'aws-region' } },
           { env: { AWS_REGION: 'invalid-region' } }
         )
       ).toThrow(EnvironmentValidationError);
@@ -320,7 +320,7 @@ describe('AWS validation types', () => {
   describe('aws-account-id validation', () => {
     it('accepts valid 12-digit account ID', () => {
       const env = createEnv(
-        { ACCOUNT_ID: { type: 'string', validation: 'aws-account-id' } },
+        { ACCOUNT_ID: { type: 'aws-account-id' } },
         { env: { ACCOUNT_ID: '123456789012' } }
       );
       expect(env.ACCOUNT_ID).toBe('123456789012');
@@ -329,7 +329,7 @@ describe('AWS validation types', () => {
     it('rejects account ID with wrong length', () => {
       expect(() =>
         createEnv(
-          { ACCOUNT_ID: { type: 'string', validation: 'aws-account-id' } },
+          { ACCOUNT_ID: { type: 'aws-account-id' } },
           { env: { ACCOUNT_ID: '12345678901' } }
         )
       ).toThrow(EnvironmentValidationError);
@@ -339,16 +339,18 @@ describe('AWS validation types', () => {
   describe('iam-role-arn validation', () => {
     it('accepts valid IAM role ARN', () => {
       const env = createEnv(
-        { ROLE_ARN: { type: 'string', validation: 'iam-role-arn' } },
+        { ROLE_ARN: { type: 'iam-role-arn', required: true } },
         { env: { ROLE_ARN: 'arn:aws:iam::123456789012:role/MyRole' } }
       );
-      expect(env.ROLE_ARN).toBe('arn:aws:iam::123456789012:role/MyRole');
+      expect(env.ROLE_ARN.value).toBe('arn:aws:iam::123456789012:role/MyRole');
+      expect(env.ROLE_ARN.roleName).toBe('MyRole');
+      expect(env.ROLE_ARN.accountId).toBe('123456789012');
     });
 
     it('rejects invalid IAM role ARN', () => {
       expect(() =>
         createEnv(
-          { ROLE_ARN: { type: 'string', validation: 'iam-role-arn' } },
+          { ROLE_ARN: { type: 'iam-role-arn', required: true } },
           { env: { ROLE_ARN: 'invalid-arn' } }
         )
       ).toThrow(EnvironmentValidationError);
@@ -358,7 +360,7 @@ describe('AWS validation types', () => {
   describe('iam-user-arn validation', () => {
     it('accepts valid IAM user ARN', () => {
       const env = createEnv(
-        { USER_ARN: { type: 'string', validation: 'iam-user-arn' } },
+        { USER_ARN: { type: 'iam-user-arn' } },
         { env: { USER_ARN: 'arn:aws:iam::123456789012:user/MyUser' } }
       );
       expect(env.USER_ARN).toBe('arn:aws:iam::123456789012:user/MyUser');
@@ -368,7 +370,7 @@ describe('AWS validation types', () => {
   describe('s3-bucket-name validation', () => {
     it('accepts valid S3 bucket name', () => {
       const env = createEnv(
-        { BUCKET: { type: 'string', validation: 's3-bucket-name' } },
+        { BUCKET: { type: 's3-bucket-name' } },
         { env: { BUCKET: 'my-bucket-123' } }
       );
       expect(env.BUCKET).toBe('my-bucket-123');
@@ -377,7 +379,7 @@ describe('AWS validation types', () => {
     it('rejects bucket name with uppercase', () => {
       expect(() =>
         createEnv(
-          { BUCKET: { type: 'string', validation: 's3-bucket-name' } },
+          { BUCKET: { type: 's3-bucket-name' } },
           { env: { BUCKET: 'My-Bucket' } }
         )
       ).toThrow(EnvironmentValidationError);
@@ -386,7 +388,7 @@ describe('AWS validation types', () => {
     it('rejects bucket name starting with hyphen', () => {
       expect(() =>
         createEnv(
-          { BUCKET: { type: 'string', validation: 's3-bucket-name' } },
+          { BUCKET: { type: 's3-bucket-name' } },
           { env: { BUCKET: '-my-bucket' } }
         )
       ).toThrow(EnvironmentValidationError);
@@ -396,25 +398,30 @@ describe('AWS validation types', () => {
   describe('s3-arn validation', () => {
     it('accepts valid S3 bucket ARN', () => {
       const env = createEnv(
-        { S3_ARN: { type: 'string', validation: 's3-arn' } },
+        { S3_ARN: { type: 's3-arn', required: true } },
         { env: { S3_ARN: 'arn:aws:s3:::my-bucket' } }
       );
-      expect(env.S3_ARN).toBe('arn:aws:s3:::my-bucket');
+      expect(env.S3_ARN.value).toBe('arn:aws:s3:::my-bucket');
+      expect(env.S3_ARN.bucketName).toBe('my-bucket');
+      expect(env.S3_ARN.isObject).toBe(false);
     });
 
     it('accepts valid S3 object ARN', () => {
       const env = createEnv(
-        { S3_ARN: { type: 'string', validation: 's3-arn' } },
+        { S3_ARN: { type: 's3-arn', required: true } },
         { env: { S3_ARN: 'arn:aws:s3:::my-bucket/path/to/object' } }
       );
-      expect(env.S3_ARN).toBe('arn:aws:s3:::my-bucket/path/to/object');
+      expect(env.S3_ARN.value).toBe('arn:aws:s3:::my-bucket/path/to/object');
+      expect(env.S3_ARN.bucketName).toBe('my-bucket');
+      expect(env.S3_ARN.key).toBe('path/to/object');
+      expect(env.S3_ARN.isObject).toBe(true);
     });
   });
 
   describe('dynamodb-table-name validation', () => {
     it('accepts valid DynamoDB table name', () => {
       const env = createEnv(
-        { TABLE_NAME: { type: 'string', validation: 'dynamodb-table-name' } },
+        { TABLE_NAME: { type: 'dynamodb-table-name' } },
         { env: { TABLE_NAME: 'MyTable_123' } }
       );
       expect(env.TABLE_NAME).toBe('MyTable_123');
@@ -423,7 +430,7 @@ describe('AWS validation types', () => {
     it('rejects table name that is too short', () => {
       expect(() =>
         createEnv(
-          { TABLE_NAME: { type: 'string', validation: 'dynamodb-table-name' } },
+          { TABLE_NAME: { type: 'dynamodb-table-name' } },
           { env: { TABLE_NAME: 'ab' } }
         )
       ).toThrow(EnvironmentValidationError);
@@ -433,35 +440,42 @@ describe('AWS validation types', () => {
   describe('dynamodb-table-arn validation', () => {
     it('accepts valid DynamoDB table ARN', () => {
       const env = createEnv(
-        { TABLE_ARN: { type: 'string', validation: 'dynamodb-table-arn' } },
+        { TABLE_ARN: { type: 'dynamodb-table-arn', required: true } },
         {
           env: {
             TABLE_ARN: 'arn:aws:dynamodb:us-east-1:123456789012:table/MyTable',
           },
         }
       );
-      expect(env.TABLE_ARN).toBe(
+      expect(env.TABLE_ARN.value).toBe(
         'arn:aws:dynamodb:us-east-1:123456789012:table/MyTable'
       );
+      expect(env.TABLE_ARN.tableName).toBe('MyTable');
+      expect(env.TABLE_ARN.region).toBe('us-east-1');
+      expect(env.TABLE_ARN.accountId).toBe('123456789012');
     });
   });
 
   describe('rds-endpoint validation', () => {
     it('accepts valid RDS endpoint', () => {
       const env = createEnv(
-        { RDS_ENDPOINT: { type: 'string', validation: 'rds-endpoint' } },
+        { RDS_ENDPOINT: { type: 'rds-endpoint', required: true } },
         { env: { RDS_ENDPOINT: 'mydb.abc123xyz.us-east-1.rds.amazonaws.com' } }
       );
-      expect(env.RDS_ENDPOINT).toBe(
+      expect(env.RDS_ENDPOINT.value).toBe(
         'mydb.abc123xyz.us-east-1.rds.amazonaws.com'
       );
+      expect(env.RDS_ENDPOINT.hostname).toBe(
+        'mydb.abc123xyz.us-east-1.rds.amazonaws.com'
+      );
+      expect(env.RDS_ENDPOINT.region).toBe('us-east-1');
     });
   });
 
   describe('rds-cluster-id validation', () => {
     it('accepts valid RDS cluster ID', () => {
       const env = createEnv(
-        { CLUSTER_ID: { type: 'string', validation: 'rds-cluster-id' } },
+        { CLUSTER_ID: { type: 'rds-cluster-id' } },
         { env: { CLUSTER_ID: 'my-cluster-123' } }
       );
       expect(env.CLUSTER_ID).toBe('my-cluster-123');
@@ -470,7 +484,7 @@ describe('AWS validation types', () => {
     it('rejects cluster ID not starting with letter', () => {
       expect(() =>
         createEnv(
-          { CLUSTER_ID: { type: 'string', validation: 'rds-cluster-id' } },
+          { CLUSTER_ID: { type: 'rds-cluster-id' } },
           { env: { CLUSTER_ID: '123-cluster' } }
         )
       ).toThrow(EnvironmentValidationError);
@@ -481,7 +495,7 @@ describe('AWS validation types', () => {
     it('accepts valid Lambda function name', () => {
       const env = createEnv(
         {
-          FUNCTION_NAME: { type: 'string', validation: 'lambda-function-name' },
+          FUNCTION_NAME: { type: 'lambda-function-name' },
         },
         { env: { FUNCTION_NAME: 'my-function_123' } }
       );
@@ -493,8 +507,7 @@ describe('AWS validation types', () => {
         createEnv(
           {
             FUNCTION_NAME: {
-              type: 'string',
-              validation: 'lambda-function-name',
+              type: 'lambda-function-name',
             },
           },
           { env: { FUNCTION_NAME: 'my.function' } }
@@ -506,7 +519,7 @@ describe('AWS validation types', () => {
   describe('sqs-queue-url validation', () => {
     it('accepts valid SQS queue URL', () => {
       const env = createEnv(
-        { QUEUE_URL: { type: 'string', validation: 'sqs-queue-url' } },
+        { QUEUE_URL: { type: 'sqs-queue-url', required: true } },
         {
           env: {
             QUEUE_URL:
@@ -514,36 +527,50 @@ describe('AWS validation types', () => {
           },
         }
       );
-      expect(env.QUEUE_URL).toBe(
+      expect(env.QUEUE_URL.value).toBe(
         'https://sqs.us-east-1.amazonaws.com/123456789012/my-queue'
       );
+      expect(env.QUEUE_URL.queueName).toBe('my-queue');
+      expect(env.QUEUE_URL.region).toBe('us-east-1');
+      expect(env.QUEUE_URL.accountId).toBe('123456789012');
+      expect(env.QUEUE_URL.isFifo).toBe(false);
     });
   });
 
   describe('sqs-queue-arn validation', () => {
     it('accepts valid SQS queue ARN', () => {
       const env = createEnv(
-        { QUEUE_ARN: { type: 'string', validation: 'sqs-queue-arn' } },
+        { QUEUE_ARN: { type: 'sqs-queue-arn', required: true } },
         { env: { QUEUE_ARN: 'arn:aws:sqs:us-east-1:123456789012:my-queue' } }
       );
-      expect(env.QUEUE_ARN).toBe('arn:aws:sqs:us-east-1:123456789012:my-queue');
+      expect(env.QUEUE_ARN.value).toBe(
+        'arn:aws:sqs:us-east-1:123456789012:my-queue'
+      );
+      expect(env.QUEUE_ARN.queueName).toBe('my-queue');
+      expect(env.QUEUE_ARN.region).toBe('us-east-1');
+      expect(env.QUEUE_ARN.accountId).toBe('123456789012');
     });
   });
 
   describe('sns-topic-arn validation', () => {
     it('accepts valid SNS topic ARN', () => {
       const env = createEnv(
-        { TOPIC_ARN: { type: 'string', validation: 'sns-topic-arn' } },
+        { TOPIC_ARN: { type: 'sns-topic-arn', required: true } },
         { env: { TOPIC_ARN: 'arn:aws:sns:us-east-1:123456789012:my-topic' } }
       );
-      expect(env.TOPIC_ARN).toBe('arn:aws:sns:us-east-1:123456789012:my-topic');
+      expect(env.TOPIC_ARN.value).toBe(
+        'arn:aws:sns:us-east-1:123456789012:my-topic'
+      );
+      expect(env.TOPIC_ARN.topicName).toBe('my-topic');
+      expect(env.TOPIC_ARN.region).toBe('us-east-1');
+      expect(env.TOPIC_ARN.accountId).toBe('123456789012');
     });
   });
 
   describe('event-bus-name validation', () => {
     it('accepts default event bus', () => {
       const env = createEnv(
-        { EVENT_BUS: { type: 'string', validation: 'event-bus-name' } },
+        { EVENT_BUS: { type: 'event-bus-name' } },
         { env: { EVENT_BUS: 'default' } }
       );
       expect(env.EVENT_BUS).toBe('default');
@@ -551,7 +578,7 @@ describe('AWS validation types', () => {
 
     it('accepts custom event bus name', () => {
       const env = createEnv(
-        { EVENT_BUS: { type: 'string', validation: 'event-bus-name' } },
+        { EVENT_BUS: { type: 'event-bus-name' } },
         { env: { EVENT_BUS: 'my-custom-bus' } }
       );
       expect(env.EVENT_BUS).toBe('my-custom-bus');
@@ -561,7 +588,7 @@ describe('AWS validation types', () => {
   describe('api-gateway-id validation', () => {
     it('accepts valid API Gateway ID', () => {
       const env = createEnv(
-        { API_ID: { type: 'string', validation: 'api-gateway-id' } },
+        { API_ID: { type: 'api-gateway-id' } },
         { env: { API_ID: 'abc1234567' } }
       );
       expect(env.API_ID).toBe('abc1234567');
@@ -570,7 +597,7 @@ describe('AWS validation types', () => {
     it('rejects API Gateway ID with uppercase', () => {
       expect(() =>
         createEnv(
-          { API_ID: { type: 'string', validation: 'api-gateway-id' } },
+          { API_ID: { type: 'api-gateway-id' } },
           { env: { API_ID: 'ABC1234567' } }
         )
       ).toThrow(EnvironmentValidationError);
@@ -580,7 +607,7 @@ describe('AWS validation types', () => {
   describe('vpc-id validation', () => {
     it('accepts valid VPC ID (legacy format)', () => {
       const env = createEnv(
-        { VPC_ID: { type: 'string', validation: 'vpc-id' } },
+        { VPC_ID: { type: 'vpc-id' } },
         { env: { VPC_ID: 'vpc-12345678' } }
       );
       expect(env.VPC_ID).toBe('vpc-12345678');
@@ -588,7 +615,7 @@ describe('AWS validation types', () => {
 
     it('accepts valid VPC ID (new format)', () => {
       const env = createEnv(
-        { VPC_ID: { type: 'string', validation: 'vpc-id' } },
+        { VPC_ID: { type: 'vpc-id' } },
         { env: { VPC_ID: 'vpc-1234567890abcdef0' } }
       );
       expect(env.VPC_ID).toBe('vpc-1234567890abcdef0');
@@ -598,7 +625,7 @@ describe('AWS validation types', () => {
   describe('subnet-id validation', () => {
     it('accepts valid Subnet ID', () => {
       const env = createEnv(
-        { SUBNET_ID: { type: 'string', validation: 'subnet-id' } },
+        { SUBNET_ID: { type: 'subnet-id' } },
         { env: { SUBNET_ID: 'subnet-12345678' } }
       );
       expect(env.SUBNET_ID).toBe('subnet-12345678');
@@ -608,7 +635,7 @@ describe('AWS validation types', () => {
   describe('security-group-id validation', () => {
     it('accepts valid Security Group ID', () => {
       const env = createEnv(
-        { SG_ID: { type: 'string', validation: 'security-group-id' } },
+        { SG_ID: { type: 'security-group-id' } },
         { env: { SG_ID: 'sg-12345678' } }
       );
       expect(env.SG_ID).toBe('sg-12345678');
@@ -618,7 +645,7 @@ describe('AWS validation types', () => {
   describe('ec2-instance-id validation', () => {
     it('accepts valid EC2 Instance ID', () => {
       const env = createEnv(
-        { INSTANCE_ID: { type: 'string', validation: 'ec2-instance-id' } },
+        { INSTANCE_ID: { type: 'ec2-instance-id' } },
         { env: { INSTANCE_ID: 'i-12345678' } }
       );
       expect(env.INSTANCE_ID).toBe('i-12345678');
@@ -628,7 +655,7 @@ describe('AWS validation types', () => {
   describe('cloudfront-dist-id validation', () => {
     it('accepts valid CloudFront Distribution ID', () => {
       const env = createEnv(
-        { DIST_ID: { type: 'string', validation: 'cloudfront-dist-id' } },
+        { DIST_ID: { type: 'cloudfront-dist-id' } },
         { env: { DIST_ID: 'E1A2B3C4D5E6F7' } }
       );
       expect(env.DIST_ID).toBe('E1A2B3C4D5E6F7');
@@ -637,7 +664,7 @@ describe('AWS validation types', () => {
     it('rejects CloudFront Distribution ID with lowercase', () => {
       expect(() =>
         createEnv(
-          { DIST_ID: { type: 'string', validation: 'cloudfront-dist-id' } },
+          { DIST_ID: { type: 'cloudfront-dist-id' } },
           { env: { DIST_ID: 'e1a2b3c4d5e6f7' } }
         )
       ).toThrow(EnvironmentValidationError);
@@ -647,7 +674,7 @@ describe('AWS validation types', () => {
   describe('kms-key-id validation', () => {
     it('accepts valid KMS Key ID (UUID)', () => {
       const env = createEnv(
-        { KMS_KEY_ID: { type: 'string', validation: 'kms-key-id' } },
+        { KMS_KEY_ID: { type: 'kms-key-id' } },
         { env: { KMS_KEY_ID: '12345678-1234-1234-1234-123456789012' } }
       );
       expect(env.KMS_KEY_ID).toBe('12345678-1234-1234-1234-123456789012');
@@ -657,7 +684,7 @@ describe('AWS validation types', () => {
   describe('kms-key-arn validation', () => {
     it('accepts valid KMS Key ARN', () => {
       const env = createEnv(
-        { KMS_KEY_ARN: { type: 'string', validation: 'kms-key-arn' } },
+        { KMS_KEY_ARN: { type: 'kms-key-arn', required: true } },
         {
           env: {
             KMS_KEY_ARN:
@@ -665,16 +692,21 @@ describe('AWS validation types', () => {
           },
         }
       );
-      expect(env.KMS_KEY_ARN).toBe(
+      expect(env.KMS_KEY_ARN.value).toBe(
         'arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012'
       );
+      expect(env.KMS_KEY_ARN.keyId).toBe(
+        '12345678-1234-1234-1234-123456789012'
+      );
+      expect(env.KMS_KEY_ARN.region).toBe('us-east-1');
+      expect(env.KMS_KEY_ARN.accountId).toBe('123456789012');
     });
   });
 
   describe('secrets-manager-arn validation', () => {
     it('accepts valid Secrets Manager ARN', () => {
       const env = createEnv(
-        { SECRET_ARN: { type: 'string', validation: 'secrets-manager-arn' } },
+        { SECRET_ARN: { type: 'secrets-manager-arn', required: true } },
         {
           env: {
             SECRET_ARN:
@@ -682,16 +714,19 @@ describe('AWS validation types', () => {
           },
         }
       );
-      expect(env.SECRET_ARN).toBe(
+      expect(env.SECRET_ARN.value).toBe(
         'arn:aws:secretsmanager:us-east-1:123456789012:secret:my-secret-AbCdEf'
       );
+      expect(env.SECRET_ARN.secretName).toBe('my-secret');
+      expect(env.SECRET_ARN.region).toBe('us-east-1');
+      expect(env.SECRET_ARN.accountId).toBe('123456789012');
     });
   });
 
   describe('ssm-parameter-name validation', () => {
     it('accepts valid SSM Parameter name', () => {
       const env = createEnv(
-        { PARAM_NAME: { type: 'string', validation: 'ssm-parameter-name' } },
+        { PARAM_NAME: { type: 'ssm-parameter-name' } },
         { env: { PARAM_NAME: '/my/parameter/name' } }
       );
       expect(env.PARAM_NAME).toBe('/my/parameter/name');
@@ -700,8 +735,149 @@ describe('AWS validation types', () => {
     it('rejects SSM Parameter name not starting with /', () => {
       expect(() =>
         createEnv(
-          { PARAM_NAME: { type: 'string', validation: 'ssm-parameter-name' } },
+          { PARAM_NAME: { type: 'ssm-parameter-name' } },
           { env: { PARAM_NAME: 'my/parameter' } }
+        )
+      ).toThrow(EnvironmentValidationError);
+    });
+  });
+
+  describe('s3-uri validation', () => {
+    it('accepts valid S3 URI', () => {
+      const env = createEnv(
+        { S3_URI: { type: 's3-uri' } },
+        { env: { S3_URI: 's3://my-bucket/path/to/object.txt' } }
+      );
+      expect(env.S3_URI?.value).toBe('s3://my-bucket/path/to/object.txt');
+      expect(env.S3_URI?.bucket).toBe('my-bucket');
+      expect(env.S3_URI?.key).toBe('path/to/object.txt');
+    });
+
+    it('rejects S3 URI without key', () => {
+      expect(() =>
+        createEnv(
+          { S3_URI: { type: 's3-uri' } },
+          { env: { S3_URI: 's3://my-bucket' } }
+        )
+      ).toThrow(EnvironmentValidationError);
+    });
+
+    it('rejects invalid S3 URI scheme', () => {
+      expect(() =>
+        createEnv(
+          { S3_URI: { type: 's3-uri' } },
+          { env: { S3_URI: 'https://my-bucket/object' } }
+        )
+      ).toThrow(EnvironmentValidationError);
+    });
+  });
+
+  describe('lambda-function-arn validation', () => {
+    it('accepts valid Lambda Function ARN without alias', () => {
+      const env = createEnv(
+        { FUNCTION_ARN: { type: 'lambda-function-arn' } },
+        {
+          env: {
+            FUNCTION_ARN:
+              'arn:aws:lambda:us-east-1:123456789012:function:my-function',
+          },
+        }
+      );
+      expect(env.FUNCTION_ARN?.value).toBe(
+        'arn:aws:lambda:us-east-1:123456789012:function:my-function'
+      );
+      expect(env.FUNCTION_ARN?.functionName).toBe('my-function');
+      expect(env.FUNCTION_ARN?.region).toBe('us-east-1');
+      expect(env.FUNCTION_ARN?.accountId).toBe('123456789012');
+      expect(env.FUNCTION_ARN?.alias).toBeUndefined();
+      expect(env.FUNCTION_ARN?.qualifier).toBeUndefined();
+    });
+
+    it('accepts valid Lambda Function ARN with alias', () => {
+      const env = createEnv(
+        { FUNCTION_ARN: { type: 'lambda-function-arn' } },
+        {
+          env: {
+            FUNCTION_ARN:
+              'arn:aws:lambda:us-east-1:123456789012:function:my-function:prod',
+          },
+        }
+      );
+      expect(env.FUNCTION_ARN?.functionName).toBe('my-function');
+      expect(env.FUNCTION_ARN?.alias).toBe('prod');
+      expect(env.FUNCTION_ARN?.qualifier).toBe('prod');
+    });
+
+    it('accepts valid Lambda Function ARN with $LATEST', () => {
+      const env = createEnv(
+        { FUNCTION_ARN: { type: 'lambda-function-arn' } },
+        {
+          env: {
+            FUNCTION_ARN:
+              'arn:aws:lambda:us-east-1:123456789012:function:my-function:$LATEST',
+          },
+        }
+      );
+      expect(env.FUNCTION_ARN?.alias).toBe('$LATEST');
+    });
+
+    it('rejects invalid Lambda Function ARN', () => {
+      expect(() =>
+        createEnv(
+          { FUNCTION_ARN: { type: 'lambda-function-arn' } },
+          { env: { FUNCTION_ARN: 'invalid-arn' } }
+        )
+      ).toThrow(EnvironmentValidationError);
+    });
+  });
+
+  describe('arn validation', () => {
+    it('accepts valid generic ARN', () => {
+      const env = createEnv(
+        { RESOURCE_ARN: { type: 'arn' } },
+        {
+          env: {
+            RESOURCE_ARN:
+              'arn:aws:lambda:us-east-1:123456789012:function:my-function',
+          },
+        }
+      );
+      expect(env.RESOURCE_ARN?.value).toBe(
+        'arn:aws:lambda:us-east-1:123456789012:function:my-function'
+      );
+      expect(env.RESOURCE_ARN?.service).toBe('lambda');
+      expect(env.RESOURCE_ARN?.region).toBe('us-east-1');
+      expect(env.RESOURCE_ARN?.accountId).toBe('123456789012');
+      expect(env.RESOURCE_ARN?.resource).toBe('function:my-function');
+    });
+
+    it('accepts S3 ARN with empty region and account', () => {
+      const env = createEnv(
+        { RESOURCE_ARN: { type: 'arn' } },
+        { env: { RESOURCE_ARN: 'arn:aws:s3:::my-bucket/my-object' } }
+      );
+      expect(env.RESOURCE_ARN?.service).toBe('s3');
+      expect(env.RESOURCE_ARN?.region).toBe('');
+      expect(env.RESOURCE_ARN?.accountId).toBe('');
+      expect(env.RESOURCE_ARN?.resource).toBe('my-bucket/my-object');
+    });
+
+    it('accepts IAM ARN with empty region', () => {
+      const env = createEnv(
+        { RESOURCE_ARN: { type: 'arn' } },
+        { env: { RESOURCE_ARN: 'arn:aws:iam::123456789012:role/my-role' } }
+      );
+      expect(env.RESOURCE_ARN?.service).toBe('iam');
+      expect(env.RESOURCE_ARN?.region).toBe('');
+      expect(env.RESOURCE_ARN?.accountId).toBe('123456789012');
+      expect(env.RESOURCE_ARN?.resource).toBe('role/my-role');
+    });
+
+    it('rejects invalid ARN', () => {
+      expect(() =>
+        createEnv(
+          { RESOURCE_ARN: { type: 'arn' } },
+          { env: { RESOURCE_ARN: 'not-an-arn' } }
         )
       ).toThrow(EnvironmentValidationError);
     });

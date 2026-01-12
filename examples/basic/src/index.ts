@@ -1,6 +1,6 @@
 /**
  * lambda-env-schema - Basic Example
- * 
+ *
  * This example demonstrates all major features of the library:
  * - Type coercion (string, number, boolean, array, json)
  * - Required vs optional fields
@@ -28,25 +28,25 @@ const env = createEnv({
   // String type (no coercion needed)
   API_KEY: { type: 'string', required: true, secret: true },
   LOG_LEVEL: { type: 'string', default: 'info' },
-  
+
   // Number type (automatic coercion from string)
   PORT: { type: 'number', default: 3000 },
   MAX_CONNECTIONS: { type: 'number', required: true },
   TIMEOUT_MS: { type: 'number' },
-  
+
   // Boolean type (automatic coercion from string)
   DEBUG: { type: 'boolean', default: false },
   ENABLE_CACHE: { type: 'boolean' },
   ENABLE_METRICS: { type: 'boolean' },
-  
+
   // Array type (automatic split by comma)
   ALLOWED_ORIGINS: { type: 'array', itemType: 'string', required: true },
   TAGS: { type: 'array', itemType: 'string', default: [] },
-  
+
   // JSON type (automatic parse)
   DATABASE_CONFIG: { type: 'json', required: true },
   FEATURE_FLAGS: { type: 'json' },
-  
+
   // Optional values
   OPTIONAL_VALUE: { type: 'string' },
   CACHE_TTL: { type: 'number' },
@@ -57,20 +57,49 @@ console.log();
 
 // Type-safe access with auto-completion
 console.log('String values:');
-console.log('  API_KEY:', typeof env.API_KEY === 'string' ? env.API_KEY.substring(0, 3) + '***' : env.API_KEY); // Masked for security
+console.log(
+  '  API_KEY:',
+  typeof env.API_KEY === 'string'
+    ? env.API_KEY.substring(0, 3) + '***'
+    : env.API_KEY
+); // Masked for security
 console.log('  LOG_LEVEL:', env.LOG_LEVEL);
 console.log();
 
 console.log('Number values:');
 console.log('  PORT:', env.PORT, '(type:', typeof env.PORT, ')');
-console.log('  MAX_CONNECTIONS:', env.MAX_CONNECTIONS, '(type:', typeof env.MAX_CONNECTIONS, ')');
-console.log('  TIMEOUT_MS:', env.TIMEOUT_MS, '(type:', typeof env.TIMEOUT_MS, ')');
+console.log(
+  '  MAX_CONNECTIONS:',
+  env.MAX_CONNECTIONS,
+  '(type:',
+  typeof env.MAX_CONNECTIONS,
+  ')'
+);
+console.log(
+  '  TIMEOUT_MS:',
+  env.TIMEOUT_MS,
+  '(type:',
+  typeof env.TIMEOUT_MS,
+  ')'
+);
 console.log();
 
 console.log('Boolean values:');
 console.log('  DEBUG:', env.DEBUG, '(type:', typeof env.DEBUG, ')');
-console.log('  ENABLE_CACHE:', env.ENABLE_CACHE, '(type:', typeof env.ENABLE_CACHE, ')');
-console.log('  ENABLE_METRICS:', env.ENABLE_METRICS, '(type:', typeof env.ENABLE_METRICS, ')');
+console.log(
+  '  ENABLE_CACHE:',
+  env.ENABLE_CACHE,
+  '(type:',
+  typeof env.ENABLE_CACHE,
+  ')'
+);
+console.log(
+  '  ENABLE_METRICS:',
+  env.ENABLE_METRICS,
+  '(type:',
+  typeof env.ENABLE_METRICS,
+  ')'
+);
 console.log();
 
 console.log('Array values:');
@@ -170,7 +199,11 @@ const defaultEnv = createEnv({
   WITH_DEFAULT: { type: 'string', default: 'default-value' },
   WITH_DEFAULT_NUMBER: { type: 'number', default: 42 },
   WITH_DEFAULT_BOOLEAN: { type: 'boolean', default: true },
-  WITH_DEFAULT_ARRAY: { type: 'array', itemType: 'string', default: ['a', 'b', 'c'] },
+  WITH_DEFAULT_ARRAY: {
+    type: 'array',
+    itemType: 'string',
+    default: ['a', 'b', 'c'],
+  },
   WITH_DEFAULT_JSON: { type: 'json', default: { key: 'value' } },
 });
 

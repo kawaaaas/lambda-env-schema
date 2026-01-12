@@ -124,7 +124,9 @@ export function isValidLambdaFunctionArn(value: string): boolean {
  * // null
  * ```
  */
-export function parseLambdaFunctionArn(value: string): ParsedLambdaFunctionArn | null {
+export function parseLambdaFunctionArn(
+  value: string
+): ParsedLambdaFunctionArn | null {
   const match = value.match(LAMBDA_FUNCTION_ARN_PATTERN);
   if (!match) return null;
 

@@ -141,7 +141,6 @@ export function extractAccountIdFromDynamoDBArn(
   return undefined;
 }
 
-
 /**
  * Parses a DynamoDB Table ARN into its components.
  *
@@ -162,7 +161,9 @@ export function extractAccountIdFromDynamoDBArn(
  * // null
  * ```
  */
-export function parseDynamoDBTableArn(value: string): ParsedDynamoDBTableArn | null {
+export function parseDynamoDBTableArn(
+  value: string
+): ParsedDynamoDBTableArn | null {
   if (!isValidDynamoDBTableArn(value)) return null;
 
   const region = extractRegionFromDynamoDBArn(value);
