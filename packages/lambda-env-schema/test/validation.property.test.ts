@@ -1,7 +1,12 @@
 import * as fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { EnvironmentValidationError, formatValue } from '../src/errors';
-import type { ArraySchema, NumberSchema, SchemaItem, StringSchema } from '../src/types';
+import type {
+  ArraySchema,
+  NumberSchema,
+  SchemaItem,
+  StringSchema,
+} from '../src/types';
 import {
   applyDefault,
   checkConstraints,
@@ -17,7 +22,9 @@ describe('validation property tests', () => {
         fc.property(
           fc.array(
             fc.record({
-              key: fc.string({ minLength: 1 }).filter((s) => /^[A-Z_][A-Z0-9_]*$/i.test(s)),
+              key: fc
+                .string({ minLength: 1 })
+                .filter((s) => /^[A-Z_][A-Z0-9_]*$/i.test(s)),
               message: fc.string({ minLength: 1 }),
             }),
             { minLength: 1, maxLength: 10 }
@@ -87,8 +94,12 @@ describe('validation property tests', () => {
       fc.assert(
         fc.property(fc.string(), (value) => {
           const masked = formatValue(value, true);
+          // Secret values should always be masked as "***"
           expect(masked).toBe('***');
-          expect(masked).not.toContain(value.length > 0 ? value : 'impossible');
+          // The original value should not appear unless it's a substring of "***"
+          if (value.length > 0 && !'***'.includes(value)) {
+            expect(masked).not.toContain(value);
+          }
         }),
         { numRuns: 100 }
       );
@@ -123,7 +134,9 @@ describe('validation property tests', () => {
     it('returns error when required and no value and no default', () => {
       fc.assert(
         fc.property(
-          fc.string({ minLength: 1 }).filter((s) => /^[A-Z_][A-Z0-9_]*$/i.test(s)),
+          fc
+            .string({ minLength: 1 })
+            .filter((s) => /^[A-Z_][A-Z0-9_]*$/i.test(s)),
           (key) => {
             const schema: SchemaItem = { type: 'string', required: true };
             const result = checkRequired(key, schema, undefined);
@@ -179,7 +192,10 @@ describe('validation property tests', () => {
     it('applyDefault returns default when no value is set', () => {
       fc.assert(
         fc.property(fc.string(), (defaultValue) => {
-          const schema: StringSchema = { type: 'string', default: defaultValue };
+          const schema: StringSchema = {
+            type: 'string',
+            default: defaultValue,
+          };
           const result = applyDefault(schema, undefined);
 
           expect(result.hasValue).toBe(true);
@@ -194,7 +210,10 @@ describe('validation property tests', () => {
     it('applyDefault returns original value when set', () => {
       fc.assert(
         fc.property(fc.string(), fc.string(), (value, defaultValue) => {
-          const schema: StringSchema = { type: 'string', default: defaultValue };
+          const schema: StringSchema = {
+            type: 'string',
+            default: defaultValue,
+          };
           const result = applyDefault(schema, value);
 
           expect(result.hasValue).toBe(true);
@@ -224,10 +243,14 @@ describe('validation property tests', () => {
       fc.assert(
         fc.property(
           fc.string({ minLength: 1 }),
-          fc.array(fc.string({ minLength: 1 }), { minLength: 1, maxLength: 10 }),
+          fc.array(fc.string({ minLength: 1 }), {
+            minLength: 1,
+            maxLength: 10,
+          }),
           (key, enumValues) => {
             // Pick a random value from the enum
-            const value = enumValues[Math.floor(Math.random() * enumValues.length)];
+            const value =
+              enumValues[Math.floor(Math.random() * enumValues.length)];
             const schema: StringSchema = {
               type: 'string',
               enum: enumValues as readonly string[],
@@ -299,7 +322,9 @@ describe('validation property tests', () => {
               const result = checkConstraints(key, schema, value);
               expect(result.valid).toBe(false);
               if (!result.valid) {
-                expect(result.errors.some((e) => e.message.includes('at least'))).toBe(true);
+                expect(
+                  result.errors.some((e) => e.message.includes('at least'))
+                ).toBe(true);
               }
             }
           ),
@@ -320,7 +345,9 @@ describe('validation property tests', () => {
               const result = checkConstraints(key, schema, value);
               expect(result.valid).toBe(false);
               if (!result.valid) {
-                expect(result.errors.some((e) => e.message.includes('at most'))).toBe(true);
+                expect(
+                  result.errors.some((e) => e.message.includes('at most'))
+                ).toBe(true);
               }
             }
           ),
@@ -340,7 +367,11 @@ describe('validation property tests', () => {
               const actualMax = Math.max(min, max);
               const value = Math.floor((actualMin + actualMax) / 2);
 
-              const schema: NumberSchema = { type: 'number', min: actualMin, max: actualMax };
+              const schema: NumberSchema = {
+                type: 'number',
+                min: actualMin,
+                max: actualMax,
+              };
 
               const result = checkConstraints(key, schema, value);
               expect(result.valid).toBe(true);
@@ -367,7 +398,9 @@ describe('validation property tests', () => {
               const result = checkConstraints(key, schema, value);
               expect(result.valid).toBe(false);
               if (!result.valid) {
-                expect(result.errors.some((e) => e.message.includes('at least'))).toBe(true);
+                expect(
+                  result.errors.some((e) => e.message.includes('at least'))
+                ).toBe(true);
               }
             }
           ),
@@ -390,7 +423,9 @@ describe('validation property tests', () => {
               const result = checkConstraints(key, schema, value);
               expect(result.valid).toBe(false);
               if (!result.valid) {
-                expect(result.errors.some((e) => e.message.includes('at most'))).toBe(true);
+                expect(
+                  result.errors.some((e) => e.message.includes('at most'))
+                ).toBe(true);
               }
             }
           ),
@@ -410,7 +445,9 @@ describe('validation property tests', () => {
             const result = checkConstraints(key, schema, value);
             expect(result.valid).toBe(false);
             if (!result.valid) {
-              expect(result.errors.some((e) => e.message.includes('pattern'))).toBe(true);
+              expect(
+                result.errors.some((e) => e.message.includes('pattern'))
+              ).toBe(true);
             }
           }),
           { numRuns: 100 }
@@ -445,12 +482,18 @@ describe('validation property tests', () => {
             (key, minLength, value) => {
               if (value.length >= minLength) return;
 
-              const schema: ArraySchema = { type: 'array', itemType: 'string', minLength };
+              const schema: ArraySchema = {
+                type: 'array',
+                itemType: 'string',
+                minLength,
+              };
 
               const result = checkConstraints(key, schema, value);
               expect(result.valid).toBe(false);
               if (!result.valid) {
-                expect(result.errors.some((e) => e.message.includes('at least'))).toBe(true);
+                expect(
+                  result.errors.some((e) => e.message.includes('at least'))
+                ).toBe(true);
               }
             }
           ),
@@ -467,12 +510,18 @@ describe('validation property tests', () => {
             (key, maxLength, value) => {
               if (value.length <= maxLength) return;
 
-              const schema: ArraySchema = { type: 'array', itemType: 'string', maxLength };
+              const schema: ArraySchema = {
+                type: 'array',
+                itemType: 'string',
+                maxLength,
+              };
 
               const result = checkConstraints(key, schema, value);
               expect(result.valid).toBe(false);
               if (!result.valid) {
-                expect(result.errors.some((e) => e.message.includes('at most'))).toBe(true);
+                expect(
+                  result.errors.some((e) => e.message.includes('at most'))
+                ).toBe(true);
               }
             }
           ),

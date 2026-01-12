@@ -15,7 +15,9 @@ describe('AWS_ENV_MAPPING', () => {
   });
 
   it('maps memoryLimitInMB to AWS_LAMBDA_FUNCTION_MEMORY_SIZE', () => {
-    expect(AWS_ENV_MAPPING.memoryLimitInMB).toBe('AWS_LAMBDA_FUNCTION_MEMORY_SIZE');
+    expect(AWS_ENV_MAPPING.memoryLimitInMB).toBe(
+      'AWS_LAMBDA_FUNCTION_MEMORY_SIZE'
+    );
   });
 
   it('maps logGroupName to AWS_LAMBDA_LOG_GROUP_NAME', () => {
@@ -116,7 +118,9 @@ describe('getAWSLambdaEnv', () => {
 
     it('returns secretAccessKey from AWS_SECRET_ACCESS_KEY', () => {
       const aws = getAWSLambdaEnv(mockLambdaEnv);
-      expect(aws.secretAccessKey).toBe('wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY');
+      expect(aws.secretAccessKey).toBe(
+        'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY'
+      );
     });
 
     it('returns sessionToken from AWS_SESSION_TOKEN', () => {
@@ -164,15 +168,29 @@ describe('getAWSLambdaEnv', () => {
 
   describe('memoryLimitInMB edge cases', () => {
     it('returns undefined for invalid memory value', () => {
-      const aws = getAWSLambdaEnv({ AWS_LAMBDA_FUNCTION_MEMORY_SIZE: 'invalid' });
+      const aws = getAWSLambdaEnv({
+        AWS_LAMBDA_FUNCTION_MEMORY_SIZE: 'invalid',
+      });
       expect(aws.memoryLimitInMB).toBeUndefined();
     });
 
     it('handles various valid memory sizes', () => {
-      expect(getAWSLambdaEnv({ AWS_LAMBDA_FUNCTION_MEMORY_SIZE: '256' }).memoryLimitInMB).toBe(256);
-      expect(getAWSLambdaEnv({ AWS_LAMBDA_FUNCTION_MEMORY_SIZE: '512' }).memoryLimitInMB).toBe(512);
-      expect(getAWSLambdaEnv({ AWS_LAMBDA_FUNCTION_MEMORY_SIZE: '1024' }).memoryLimitInMB).toBe(1024);
-      expect(getAWSLambdaEnv({ AWS_LAMBDA_FUNCTION_MEMORY_SIZE: '10240' }).memoryLimitInMB).toBe(10240);
+      expect(
+        getAWSLambdaEnv({ AWS_LAMBDA_FUNCTION_MEMORY_SIZE: '256' })
+          .memoryLimitInMB
+      ).toBe(256);
+      expect(
+        getAWSLambdaEnv({ AWS_LAMBDA_FUNCTION_MEMORY_SIZE: '512' })
+          .memoryLimitInMB
+      ).toBe(512);
+      expect(
+        getAWSLambdaEnv({ AWS_LAMBDA_FUNCTION_MEMORY_SIZE: '1024' })
+          .memoryLimitInMB
+      ).toBe(1024);
+      expect(
+        getAWSLambdaEnv({ AWS_LAMBDA_FUNCTION_MEMORY_SIZE: '10240' })
+          .memoryLimitInMB
+      ).toBe(10240);
     });
   });
 });

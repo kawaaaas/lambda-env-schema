@@ -57,7 +57,8 @@ export interface BooleanSchema extends BaseSchema {
 /**
  * Schema for array environment variables.
  */
-export interface ArraySchema<T extends 'string' | 'number' = 'string'> extends BaseSchema {
+export interface ArraySchema<T extends 'string' | 'number' = 'string'>
+  extends BaseSchema {
   type: 'array';
   /** Type of array items */
   itemType: T;
@@ -108,19 +109,20 @@ export type EnvSchema = Record<string, SchemaItem>;
  * type V = InferValue<S>; // 'dev' | 'prod'
  * ```
  */
-export type InferValue<S extends SchemaItem> = S extends StringSchema<infer E>
-  ? E
-  : S extends NumberSchema
-    ? number
-    : S extends BooleanSchema
-      ? boolean
-      : S extends ArraySchema<infer T>
-        ? T extends 'string'
-          ? string[]
-          : number[]
-        : S extends JsonSchema<infer T>
-          ? T
-          : never;
+export type InferValue<S extends SchemaItem> =
+  S extends StringSchema<infer E>
+    ? E
+    : S extends NumberSchema
+      ? number
+      : S extends BooleanSchema
+        ? boolean
+        : S extends ArraySchema<infer T>
+          ? T extends 'string'
+            ? string[]
+            : number[]
+          : S extends JsonSchema<infer T>
+            ? T
+            : never;
 
 /**
  * Checks if a schema item is required (has `required: true` or has a `default` value).
@@ -136,9 +138,8 @@ export type IsRequired<S extends SchemaItem> = S extends { required: true }
  * If the item is required or has a default, the type is non-optional.
  * Otherwise, the type includes `undefined`.
  */
-export type InferResult<S extends SchemaItem> = IsRequired<S> extends true
-  ? InferValue<S>
-  : InferValue<S> | undefined;
+export type InferResult<S extends SchemaItem> =
+  IsRequired<S> extends true ? InferValue<S> : InferValue<S> | undefined;
 
 /**
  * Converts a SNAKE_CASE string to camelCase at the type level.

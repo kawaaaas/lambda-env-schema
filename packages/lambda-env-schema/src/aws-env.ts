@@ -65,7 +65,7 @@ export const AWS_ENV_MAPPING: Record<keyof AWSLambdaEnv, string> = {
  * ```
  */
 export function getAWSLambdaEnv(
-  env: Record<string, string | undefined> = process.env,
+  env: Record<string, string | undefined> = process.env
 ): AWSLambdaEnv {
   const memoryStr = env[AWS_ENV_MAPPING.memoryLimitInMB];
   const memoryLimitInMB =
@@ -75,7 +75,9 @@ export function getAWSLambdaEnv(
     region: env[AWS_ENV_MAPPING.region],
     functionName: env[AWS_ENV_MAPPING.functionName],
     functionVersion: env[AWS_ENV_MAPPING.functionVersion],
-    memoryLimitInMB: Number.isNaN(memoryLimitInMB) ? undefined : memoryLimitInMB,
+    memoryLimitInMB: Number.isNaN(memoryLimitInMB)
+      ? undefined
+      : memoryLimitInMB,
     logGroupName: env[AWS_ENV_MAPPING.logGroupName],
     logStreamName: env[AWS_ENV_MAPPING.logStreamName],
     executionEnv: env[AWS_ENV_MAPPING.executionEnv],

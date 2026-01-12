@@ -35,14 +35,19 @@ describe('formatErrorMessage', () => {
 
     expect(message).toContain('1 environment variable(s) failed validation');
     expect(message).toContain('✗ PORT: Expected number, got "abc"');
-    expect(message).toContain('Set these in your Lambda configuration or .env file.');
+    expect(message).toContain(
+      'Set these in your Lambda configuration or .env file.'
+    );
   });
 
   it('formats multiple errors correctly', () => {
     const errors: ValidationError[] = [
       { key: 'PORT', message: 'Expected number, got "abc"' },
       { key: 'API_KEY', message: 'Required but not set' },
-      { key: 'NODE_ENV', message: 'Must be one of ["development", "production"]' },
+      {
+        key: 'NODE_ENV',
+        message: 'Must be one of ["development", "production"]',
+      },
     ];
 
     const message = formatErrorMessage(errors);
@@ -50,7 +55,9 @@ describe('formatErrorMessage', () => {
     expect(message).toContain('3 environment variable(s) failed validation');
     expect(message).toContain('✗ PORT: Expected number, got "abc"');
     expect(message).toContain('✗ API_KEY: Required but not set');
-    expect(message).toContain('✗ NODE_ENV: Must be one of ["development", "production"]');
+    expect(message).toContain(
+      '✗ NODE_ENV: Must be one of ["development", "production"]'
+    );
   });
 });
 
@@ -74,7 +81,10 @@ describe('EnvironmentValidationError', () => {
     const error = new EnvironmentValidationError(errors);
 
     expect(error.errors).toHaveLength(2);
-    expect(error.errors[0]).toEqual({ key: 'PORT', message: 'Expected number' });
+    expect(error.errors[0]).toEqual({
+      key: 'PORT',
+      message: 'Expected number',
+    });
     expect(error.errors[1]).toEqual({
       key: 'API_KEY',
       message: 'Required but not set',
@@ -90,7 +100,9 @@ describe('EnvironmentValidationError', () => {
 
     const error = new EnvironmentValidationError(errors);
 
-    expect(error.message).toContain('2 environment variable(s) failed validation');
+    expect(error.message).toContain(
+      '2 environment variable(s) failed validation'
+    );
     expect(error.message).toContain('✗ DB_PORT: Expected number, got "abc"');
     expect(error.message).toContain('✗ API_KEY: Required but not set');
   });

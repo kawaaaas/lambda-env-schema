@@ -54,7 +54,6 @@ describe('coercion property tests', () => {
     });
   });
 
-
   describe('string identity', () => {
     it('returns the input string unchanged', () => {
       fc.assert(
@@ -75,7 +74,9 @@ describe('coercion property tests', () => {
     it('string array: join then split produces equivalent array', () => {
       fc.assert(
         fc.property(
-          fc.array(fc.string().filter((s) => !s.includes(',') && s.trim() === s)),
+          fc.array(
+            fc.string().filter((s) => !s.includes(',') && s.trim() === s)
+          ),
           (arr) => {
             const joined = arr.join(',');
             const result = coerceStringArray(joined, ',');
@@ -153,7 +154,9 @@ describe('coercion property tests', () => {
     it('custom separator works correctly', () => {
       fc.assert(
         fc.property(
-          fc.array(fc.string().filter((s) => !s.includes('|') && s.trim() === s)),
+          fc.array(
+            fc.string().filter((s) => !s.includes('|') && s.trim() === s)
+          ),
           (arr) => {
             const joined = arr.join('|');
             const result = coerceStringArray(joined, '|');
@@ -172,7 +175,6 @@ describe('coercion property tests', () => {
       );
     });
   });
-
 
   describe('JSON round-trip', () => {
     it('stringify then parse produces equivalent value for objects', () => {
