@@ -175,7 +175,7 @@ export function parseIAMRoleArn(value: string): ParsedIAMRoleArn | null {
   let path: string | undefined;
   if (segments.length > 1) {
     // Path includes leading and trailing slashes
-    path = '/' + segments.slice(0, -1).join('/') + '/';
+    path = `/${segments.slice(0, -1).join('/')}/`;
   }
 
   return {

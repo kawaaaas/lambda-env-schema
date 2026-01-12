@@ -60,7 +60,7 @@ console.log('String values:');
 console.log(
   '  API_KEY:',
   typeof env.API_KEY === 'string'
-    ? env.API_KEY.substring(0, 3) + '***'
+    ? `${env.API_KEY.substring(0, 3)}***`
     : env.API_KEY
 ); // Masked for security
 console.log('  LOG_LEVEL:', env.LOG_LEVEL);

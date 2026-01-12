@@ -8,8 +8,8 @@
 // Main API
 // =============================================================================
 
-export { createEnv } from './core/create-env';
 export type { CreateEnvOptions, EnvResult } from './core/create-env';
+export { createEnv } from './core/create-env';
 
 // =============================================================================
 // Schema Types
@@ -20,10 +20,12 @@ export type {
   BooleanSchema,
   EnvSchema,
   InferEnv,
+  InferValue,
   JsonSchema,
   NumberSchema,
+  ParsedValueMap,
   // Schema item types for defining schemas
-  StringSchema
+  StringSchema,
 } from './share/types';
 
 // =============================================================================
@@ -36,8 +38,8 @@ export type { AWSLambdaEnv } from './aws/aws-env';
 // Error Handling
 // =============================================================================
 
-export { EnvironmentValidationError } from './share/errors';
 export type { ValidationError } from './share/errors';
+export { EnvironmentValidationError } from './share/errors';
 
 // =============================================================================
 // AWS Validation Types
@@ -47,7 +49,7 @@ export type {
   AWSParsedType,
   AWSValidationOnlyType,
   AWSValidationType,
-  ValidationRule
+  ValidationRule,
 } from './aws/aws-validation-types';
 
 // =============================================================================
@@ -67,7 +69,7 @@ export type {
   ParsedSecretsManagerArn,
   ParsedSNSTopicArn,
   ParsedSQSQueueArn,
-  ParsedSQSQueueUrl
+  ParsedSQSQueueUrl,
 } from './aws/parsed-types';
 
 // =============================================================================
@@ -80,8 +82,10 @@ export { isValidApiGatewayId } from './aws/api-gateway-validators';
 export { isValidArn, parseArn } from './aws/arn-validators';
 // AWS Regions & Account
 export {
-  AWS_REGIONS, isValidAWSAccountId,
-  isValidAWSRegion, type AWSRegion
+  AWS_REGIONS,
+  type AWSRegion,
+  isValidAWSAccountId,
+  isValidAWSRegion,
 } from './aws/aws-regions';
 
 // CloudFront
@@ -93,7 +97,7 @@ export {
   extractRegionFromDynamoDBArn,
   isValidDynamoDBTableArn,
   isValidDynamoDBTableName,
-  parseDynamoDBTableArn
+  parseDynamoDBTableArn,
 } from './aws/dynamodb-validators';
 
 // EventBridge
@@ -105,7 +109,7 @@ export {
   extractRegionFromIAMArn,
   isValidIAMRoleArn,
   isValidIAMUserArn,
-  parseIAMRoleArn
+  parseIAMRoleArn,
 } from './aws/iam-validators';
 
 // KMS
@@ -114,14 +118,14 @@ export {
   extractRegionFromKMSKeyArn,
   isValidKMSKeyArn,
   isValidKMSKeyId,
-  parseKMSKeyArn
+  parseKMSKeyArn,
 } from './aws/kms-validators';
 
 // Lambda
 export {
   isValidLambdaFunctionArn,
   isValidLambdaFunctionName,
-  parseLambdaFunctionArn
+  parseLambdaFunctionArn,
 } from './aws/lambda-validators';
 
 // RDS
@@ -129,7 +133,7 @@ export {
   extractRegionFromRDSEndpoint,
   isValidRDSClusterId,
   isValidRDSEndpoint,
-  parseRDSEndpoint
+  parseRDSEndpoint,
 } from './aws/rds-validators';
 
 // S3
@@ -138,7 +142,7 @@ export {
   isValidS3BucketName,
   isValidS3Uri,
   parseS3Arn,
-  parseS3Uri
+  parseS3Uri,
 } from './aws/s3-validators';
 
 // Secrets Manager
@@ -146,7 +150,7 @@ export {
   extractAccountIdFromSecretsManagerArn,
   extractRegionFromSecretsManagerArn,
   isValidSecretsManagerArn,
-  parseSecretsManagerArn
+  parseSecretsManagerArn,
 } from './aws/secrets-manager-validators';
 
 // SNS
@@ -154,7 +158,7 @@ export {
   extractAccountIdFromSNSTopicArn,
   extractRegionFromSNSTopicArn,
   isValidSNSTopicArn,
-  parseSNSTopicArn
+  parseSNSTopicArn,
 } from './aws/sns-validators';
 
 // SQS
@@ -166,7 +170,7 @@ export {
   isValidSQSQueueArn,
   isValidSQSQueueUrl,
   parseSQSQueueArn,
-  parseSQSQueueUrl
+  parseSQSQueueUrl,
 } from './aws/sqs-validators';
 
 // SSM
@@ -177,6 +181,5 @@ export {
   isValidEc2InstanceId,
   isValidSecurityGroupId,
   isValidSubnetId,
-  isValidVpcId
+  isValidVpcId,
 } from './aws/vpc-validators';
-
