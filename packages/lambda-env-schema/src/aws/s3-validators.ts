@@ -83,16 +83,36 @@ export function isValidS3BucketName(value: string): boolean {
 }
 
 /**
- * Regular expression pattern for S3 ARN validation.
+ * Validates a bucket name within an S3 ARN context.
+ * This is more permissive than isValidS3BucketName as it allows periods
+ * for legacy bucket names that exist in ARNs, but still rejects IP addresses.
  *
- * S3 ARNs can be either:
- * - Bucket ARN: arn:aws:s3:::<bucket-name>
- * - Object ARN: arn:aws:s3:::<bucket-name>/<object-key>
- *
- * Note: S3 ARNs do not contain region or account ID (they are global resources).
- * The bucket name portion must follow S3 bucket naming rules.
+ * @param bucketName - The bucket name to validate
+ * @returns true if the bucket name is valid for S3 ARNs, false otherwise
  */
-const S3_ARN_PATTERN = /^arn:aws:s3:::[a-z0-9][a-z0-9.-]{1,61}[a-z0-9](\/.*)?$/;
+function isValidS3ArnBucketName(bucketName: string): boolean {
+  // Length: 3-63 characters
+  if (bucketName.length < 3 || bucketName.length > 63) {
+    return false;
+  }
+
+  // Only lowercase letters, numbers, hyphens, and periods
+  if (!/^[a-z0-9.-]+$/.test(bucketName)) {
+    return false;
+  }
+
+  // Must start and end with alphanumeric
+  if (!/^[a-z0-9]/.test(bucketName) || !/[a-z0-9]$/.test(bucketName)) {
+    return false;
+  }
+
+  // Must not be formatted as IP address
+  if (IP_ADDRESS_PATTERN.test(bucketName)) {
+    return false;
+  }
+
+  return true;
+}
 
 /**
  * Validates an S3 ARN (bucket or object ARN).
@@ -101,8 +121,8 @@ const S3_ARN_PATTERN = /^arn:aws:s3:::[a-z0-9][a-z0-9.-]{1,61}[a-z0-9](\/.*)?$/;
  * - Bucket ARN: arn:aws:s3:::<bucket-name>
  * - Object ARN: arn:aws:s3:::<bucket-name>/<object-key>
  *
- * The bucket name portion must be a valid S3 bucket name (3-63 characters,
- * lowercase letters, numbers, hyphens, and periods).
+ * The bucket name portion must be a valid S3 bucket name. For ARNs, this includes
+ * legacy bucket names with periods, but still excludes IP address formats.
  *
  * Note: S3 is a global service, so S3 ARNs do not contain region or account ID.
  *
@@ -116,6 +136,7 @@ const S3_ARN_PATTERN = /^arn:aws:s3:::[a-z0-9][a-z0-9.-]{1,61}[a-z0-9](\/.*)?$/;
  * // Bucket ARNs
  * isValidS3Arn('arn:aws:s3:::my-bucket');           // true
  * isValidS3Arn('arn:aws:s3:::my-bucket-123');       // true
+ * isValidS3Arn('arn:aws:s3:::my.bucket');           // true (legacy)
  *
  * // Object ARNs
  * isValidS3Arn('arn:aws:s3:::my-bucket/my-object'); // true
@@ -124,12 +145,19 @@ const S3_ARN_PATTERN = /^arn:aws:s3:::[a-z0-9][a-z0-9.-]{1,61}[a-z0-9](\/.*)?$/;
  * // Invalid ARNs
  * isValidS3Arn('arn:aws:s3:::ab');                  // false (bucket name too short)
  * isValidS3Arn('arn:aws:s3:::-my-bucket');          // false (bucket starts with hyphen)
+ * isValidS3Arn('arn:aws:s3:::192.168.1.1');         // false (IP address format)
  * isValidS3Arn('arn:aws:dynamodb:::my-bucket');     // false (wrong service)
  * isValidS3Arn('my-bucket');                        // false (not an ARN)
  * ```
  */
 export function isValidS3Arn(value: string): boolean {
-  return S3_ARN_PATTERN.test(value);
+  // Check basic ARN format first
+  const match = value.match(/^arn:aws:s3:::([^/]+)(\/.*)?$/);
+  if (!match) return false;
+  
+  // Extract bucket name and validate it using ARN-specific rules
+  const bucketName = match[1];
+  return isValidS3ArnBucketName(bucketName);
 }
 
 /**
@@ -139,7 +167,7 @@ export function isValidS3Arn(value: string): boolean {
  * - Bucket name must follow S3 bucket naming rules
  * - Key must be at least one character
  */
-const S3_URI_PATTERN = /^s3:\/\/([a-z0-9][a-z0-9.-]{1,61}[a-z0-9])\/(.+)$/;
+const S3_URI_PATTERN = /^s3:\/\/([^/]+)\/(.+)$/;
 
 /**
  * Validates an S3 URI.
@@ -159,7 +187,18 @@ const S3_URI_PATTERN = /^s3:\/\/([a-z0-9][a-z0-9.-]{1,61}[a-z0-9])\/(.+)$/;
  * ```
  */
 export function isValidS3Uri(value: string): boolean {
-  return S3_URI_PATTERN.test(value);
+  const match = value.match(S3_URI_PATTERN);
+  if (!match) return false;
+  
+  const [, bucket, key] = match;
+  
+  // Validate bucket name using existing validator
+  if (!isValidS3BucketName(bucket)) return false;
+  
+  // Validate key is not empty
+  if (!key || key.length === 0) return false;
+  
+  return true;
 }
 
 /**
@@ -181,6 +220,8 @@ export function isValidS3Uri(value: string): boolean {
  * ```
  */
 export function parseS3Uri(value: string): ParsedS3Uri | null {
+  if (!isValidS3Uri(value)) return null;
+  
   const match = value.match(S3_URI_PATTERN);
   if (!match) return null;
 
