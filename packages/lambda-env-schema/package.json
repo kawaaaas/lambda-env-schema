@@ -31,24 +31,58 @@
         "types": "./dist/index.d.cts",
         "default": "./dist/index.cjs"
       }
+    },
+    "./aws": {
+      "import": {
+        "types": "./dist/aws.d.ts",
+        "default": "./dist/aws.js"
+      },
+      "require": {
+        "types": "./dist/aws.d.cts",
+        "default": "./dist/aws.cjs"
+      }
     }
   },
   "files": [
     "dist"
   ],
+  "sideEffects": false,
   "scripts": {
     "build": "tsup",
     "prepublishOnly": "npm run build",
     "test": "vitest --run",
     "test:watch": "vitest",
     "size": "size-limit",
-    "size:why": "size-limit --why"
+    "size:why": "size-limit --why",
+    "size:check": "size-limit --json"
   },
+  "size-limit": [
+    {
+      "name": "Main (createEnv)",
+      "path": "dist/index.js",
+      "limit": "5 KB",
+      "import": "{ createEnv }",
+      "brotli": true
+    },
+    {
+      "name": "AWS Validators",
+      "path": "dist/aws.js",
+      "limit": "3 KB",
+      "brotli": true
+    },
+    {
+      "name": "Full Bundle (index + aws)",
+      "path": ["dist/index.js", "dist/aws.js"],
+      "limit": "7 KB",
+      "brotli": true
+    }
+  ],
   "devDependencies": {
     "@biomejs/biome": "^2.3.11",
     "@size-limit/preset-small-lib": "^12.0.0",
     "fast-check": "^4.5.3",
     "size-limit": "^12.0.0",
+    "terser": "^5.37.0",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
     "vitest": "^4.0.16"
