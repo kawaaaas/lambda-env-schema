@@ -25,6 +25,12 @@ export {
   isValidIAMRoleArn,
   isValidIAMUserArn
 } from './iam-validators';
+export {
+  extractAccountIdFromKMSKeyArn,
+  extractRegionFromKMSKeyArn,
+  isValidKMSKeyArn,
+  isValidKMSKeyId
+} from './kms-validators';
 export { isValidLambdaFunctionName } from './lambda-validators';
 export {
   extractRegionFromRDSEndpoint,
@@ -32,7 +38,11 @@ export {
   isValidRDSEndpoint
 } from './rds-validators';
 export { isValidS3Arn, isValidS3BucketName } from './s3-validators';
-
+export {
+  extractAccountIdFromSecretsManagerArn,
+  extractRegionFromSecretsManagerArn,
+  isValidSecretsManagerArn
+} from './secrets-manager-validators';
 export {
   extractAccountIdFromSNSTopicArn, extractRegionFromSNSTopicArn, isValidSNSTopicArn
 } from './sns-validators';
@@ -44,6 +54,7 @@ export {
   isValidSQSQueueArn,
   isValidSQSQueueUrl
 } from './sqs-validators';
+export { isValidSSMParameterName } from './ssm-validators';
 export {
   isValidEc2InstanceId,
   isValidSecurityGroupId,
