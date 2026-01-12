@@ -2,11 +2,18 @@ import * as fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import {
   AWS_REGIONS,
+  extractAccountIdFromDynamoDBArn,
   extractAccountIdFromIAMArn,
+  extractRegionFromDynamoDBArn,
+  extractRegionFromRDSEndpoint,
   isValidAWSAccountId,
   isValidAWSRegion,
+  isValidDynamoDBTableArn,
+  isValidDynamoDBTableName,
   isValidIAMRoleArn,
   isValidIAMUserArn,
+  isValidRDSClusterId,
+  isValidRDSEndpoint,
   isValidS3Arn,
   isValidS3BucketName,
 } from '../../src/aws/aws-validation-types';
@@ -18,6 +25,7 @@ const charArrayToString = (chars: string[]): string => chars.join('');
 const DIGITS = '0123456789'.split('');
 const UPPER_ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 const LOWER_ALPHA = 'abcdefghijklmnopqrstuvwxyz'.split('');
+const ALPHANUM = [...UPPER_ALPHA, ...LOWER_ALPHA, ...DIGITS];
 const LOWER_ALPHANUM = [...LOWER_ALPHA, ...DIGITS];
 const IAM_NAME_CHARS = [
   ...UPPER_ALPHA,
@@ -49,7 +57,9 @@ describe('AWS validation property tests', () => {
         fc.property(
           fc
             .string({ minLength: 1 })
-            .filter((s) => !AWS_REGIONS.includes(s as (typeof AWS_REGIONS)[number])),
+            .filter(
+              (s) => !AWS_REGIONS.includes(s as (typeof AWS_REGIONS)[number])
+            ),
           (invalidRegion) => {
             expect(isValidAWSRegion(invalidRegion)).toBe(false);
           }
@@ -127,7 +137,10 @@ describe('AWS validation property tests', () => {
 
   describe('iam-role-arn validation', () => {
     const validRoleNameArb = fc
-      .array(fc.constantFrom(...IAM_NAME_CHARS), { minLength: 1, maxLength: 64 })
+      .array(fc.constantFrom(...IAM_NAME_CHARS), {
+        minLength: 1,
+        maxLength: 64,
+      })
       .map(charArrayToString);
 
     const validAccountIdArb = fc
@@ -136,7 +149,9 @@ describe('AWS validation property tests', () => {
 
     const validIAMRoleArnArb = fc
       .tuple(validAccountIdArb, validRoleNameArb)
-      .map(([accountId, roleName]) => `arn:aws:iam::${accountId}:role/${roleName}`);
+      .map(
+        ([accountId, roleName]) => `arn:aws:iam::${accountId}:role/${roleName}`
+      );
 
     it('accepts valid IAM Role ARN format', () => {
       fc.assert(
@@ -149,10 +164,14 @@ describe('AWS validation property tests', () => {
 
     it('rejects ARNs with wrong resource type', () => {
       fc.assert(
-        fc.property(validAccountIdArb, validRoleNameArb, (accountId, roleName) => {
-          const wrongTypeArn = `arn:aws:iam::${accountId}:user/${roleName}`;
-          expect(isValidIAMRoleArn(wrongTypeArn)).toBe(false);
-        }),
+        fc.property(
+          validAccountIdArb,
+          validRoleNameArb,
+          (accountId, roleName) => {
+            const wrongTypeArn = `arn:aws:iam::${accountId}:user/${roleName}`;
+            expect(isValidIAMRoleArn(wrongTypeArn)).toBe(false);
+          }
+        ),
         { numRuns: 100 }
       );
     });
@@ -164,20 +183,28 @@ describe('AWS validation property tests', () => {
         .filter((s) => s.length !== 12);
 
       fc.assert(
-        fc.property(invalidAccountIdArb, validRoleNameArb, (invalidAccountId, roleName) => {
-          const invalidArn = `arn:aws:iam::${invalidAccountId}:role/${roleName}`;
-          expect(isValidIAMRoleArn(invalidArn)).toBe(false);
-        }),
+        fc.property(
+          invalidAccountIdArb,
+          validRoleNameArb,
+          (invalidAccountId, roleName) => {
+            const invalidArn = `arn:aws:iam::${invalidAccountId}:role/${roleName}`;
+            expect(isValidIAMRoleArn(invalidArn)).toBe(false);
+          }
+        ),
         { numRuns: 100 }
       );
     });
 
     it('extracts account ID correctly from valid IAM Role ARN', () => {
       fc.assert(
-        fc.property(validAccountIdArb, validRoleNameArb, (accountId, roleName) => {
-          const arn = `arn:aws:iam::${accountId}:role/${roleName}`;
-          expect(extractAccountIdFromIAMArn(arn)).toBe(accountId);
-        }),
+        fc.property(
+          validAccountIdArb,
+          validRoleNameArb,
+          (accountId, roleName) => {
+            const arn = `arn:aws:iam::${accountId}:role/${roleName}`;
+            expect(extractAccountIdFromIAMArn(arn)).toBe(accountId);
+          }
+        ),
         { numRuns: 100 }
       );
     });
@@ -185,7 +212,10 @@ describe('AWS validation property tests', () => {
 
   describe('iam-user-arn validation', () => {
     const validUserNameArb = fc
-      .array(fc.constantFrom(...IAM_NAME_CHARS), { minLength: 1, maxLength: 64 })
+      .array(fc.constantFrom(...IAM_NAME_CHARS), {
+        minLength: 1,
+        maxLength: 64,
+      })
       .map(charArrayToString);
 
     const validAccountIdArb = fc
@@ -194,7 +224,9 @@ describe('AWS validation property tests', () => {
 
     const validIAMUserArnArb = fc
       .tuple(validAccountIdArb, validUserNameArb)
-      .map(([accountId, userName]) => `arn:aws:iam::${accountId}:user/${userName}`);
+      .map(
+        ([accountId, userName]) => `arn:aws:iam::${accountId}:user/${userName}`
+      );
 
     it('accepts valid IAM User ARN format', () => {
       fc.assert(
@@ -207,25 +239,32 @@ describe('AWS validation property tests', () => {
 
     it('rejects ARNs with wrong resource type', () => {
       fc.assert(
-        fc.property(validAccountIdArb, validUserNameArb, (accountId, userName) => {
-          const wrongTypeArn = `arn:aws:iam::${accountId}:role/${userName}`;
-          expect(isValidIAMUserArn(wrongTypeArn)).toBe(false);
-        }),
+        fc.property(
+          validAccountIdArb,
+          validUserNameArb,
+          (accountId, userName) => {
+            const wrongTypeArn = `arn:aws:iam::${accountId}:role/${userName}`;
+            expect(isValidIAMUserArn(wrongTypeArn)).toBe(false);
+          }
+        ),
         { numRuns: 100 }
       );
     });
 
     it('extracts account ID correctly from valid IAM User ARN', () => {
       fc.assert(
-        fc.property(validAccountIdArb, validUserNameArb, (accountId, userName) => {
-          const arn = `arn:aws:iam::${accountId}:user/${userName}`;
-          expect(extractAccountIdFromIAMArn(arn)).toBe(accountId);
-        }),
+        fc.property(
+          validAccountIdArb,
+          validUserNameArb,
+          (accountId, userName) => {
+            const arn = `arn:aws:iam::${accountId}:user/${userName}`;
+            expect(extractAccountIdFromIAMArn(arn)).toBe(accountId);
+          }
+        ),
         { numRuns: 100 }
       );
     });
   });
-
 
   describe('s3-bucket-name validation', () => {
     // Generator for valid S3 bucket names
@@ -236,7 +275,10 @@ describe('AWS validation property tests', () => {
         fc.constantFrom(...LOWER_ALPHANUM),
         // Middle characters: lowercase letters, digits, or single hyphens (no consecutive)
         fc
-          .array(fc.constantFrom(...S3_BUCKET_CHARS), { minLength: 1, maxLength: 60 })
+          .array(fc.constantFrom(...S3_BUCKET_CHARS), {
+            minLength: 1,
+            maxLength: 60,
+          })
           .map((chars) => {
             // Remove consecutive hyphens
             const result: string[] = [];
@@ -274,7 +316,10 @@ describe('AWS validation property tests', () => {
 
     it('rejects bucket names shorter than 3 characters', () => {
       const shortNameArb = fc
-        .array(fc.constantFrom(...LOWER_ALPHANUM), { minLength: 1, maxLength: 2 })
+        .array(fc.constantFrom(...LOWER_ALPHANUM), {
+          minLength: 1,
+          maxLength: 2,
+        })
         .map(charArrayToString);
 
       fc.assert(
@@ -287,7 +332,10 @@ describe('AWS validation property tests', () => {
 
     it('rejects bucket names longer than 63 characters', () => {
       const longNameArb = fc
-        .array(fc.constantFrom(...LOWER_ALPHANUM), { minLength: 64, maxLength: 100 })
+        .array(fc.constantFrom(...LOWER_ALPHANUM), {
+          minLength: 64,
+          maxLength: 100,
+        })
         .map(charArrayToString);
 
       fc.assert(
@@ -300,7 +348,10 @@ describe('AWS validation property tests', () => {
 
     it('rejects bucket names starting with hyphen', () => {
       const hyphenStartArb = fc
-        .array(fc.constantFrom(...LOWER_ALPHANUM), { minLength: 2, maxLength: 62 })
+        .array(fc.constantFrom(...LOWER_ALPHANUM), {
+          minLength: 2,
+          maxLength: 62,
+        })
         .map((chars) => `-${chars.join('')}`);
 
       fc.assert(
@@ -313,7 +364,10 @@ describe('AWS validation property tests', () => {
 
     it('rejects bucket names ending with hyphen', () => {
       const hyphenEndArb = fc
-        .array(fc.constantFrom(...LOWER_ALPHANUM), { minLength: 2, maxLength: 62 })
+        .array(fc.constantFrom(...LOWER_ALPHANUM), {
+          minLength: 2,
+          maxLength: 62,
+        })
         .map((chars) => `${chars.join('')}-`);
 
       fc.assert(
@@ -327,8 +381,18 @@ describe('AWS validation property tests', () => {
     it('rejects bucket names with consecutive hyphens', () => {
       const consecutiveHyphenArb = fc
         .tuple(
-          fc.array(fc.constantFrom(...LOWER_ALPHANUM), { minLength: 1, maxLength: 30 }).map(charArrayToString),
-          fc.array(fc.constantFrom(...LOWER_ALPHANUM), { minLength: 1, maxLength: 30 }).map(charArrayToString)
+          fc
+            .array(fc.constantFrom(...LOWER_ALPHANUM), {
+              minLength: 1,
+              maxLength: 30,
+            })
+            .map(charArrayToString),
+          fc
+            .array(fc.constantFrom(...LOWER_ALPHANUM), {
+              minLength: 1,
+              maxLength: 30,
+            })
+            .map(charArrayToString)
         )
         .map(([before, after]) => `${before}--${after}`)
         .filter((name) => name.length >= 3 && name.length <= 63);
@@ -361,7 +425,10 @@ describe('AWS validation property tests', () => {
 
     it('rejects bucket names starting with xn--', () => {
       const xnPrefixArb = fc
-        .array(fc.constantFrom(...LOWER_ALPHANUM), { minLength: 1, maxLength: 59 })
+        .array(fc.constantFrom(...LOWER_ALPHANUM), {
+          minLength: 1,
+          maxLength: 59,
+        })
         .map((chars) => `xn--${chars.join('')}`)
         .filter((name) => name.length >= 3 && name.length <= 63);
 
@@ -375,7 +442,10 @@ describe('AWS validation property tests', () => {
 
     it('rejects bucket names ending with -s3alias', () => {
       const s3aliasSuffixArb = fc
-        .array(fc.constantFrom(...LOWER_ALPHANUM), { minLength: 1, maxLength: 55 })
+        .array(fc.constantFrom(...LOWER_ALPHANUM), {
+          minLength: 1,
+          maxLength: 55,
+        })
         .map((chars) => `${chars.join('')}-s3alias`)
         .filter((name) => name.length >= 3 && name.length <= 63);
 
@@ -389,7 +459,10 @@ describe('AWS validation property tests', () => {
 
     it('rejects bucket names with uppercase characters', () => {
       const uppercaseArb = fc
-        .array(fc.constantFrom(...[...LOWER_ALPHA, ...UPPER_ALPHA, ...DIGITS]), { minLength: 3, maxLength: 63 })
+        .array(
+          fc.constantFrom(...[...LOWER_ALPHA, ...UPPER_ALPHA, ...DIGITS]),
+          { minLength: 3, maxLength: 63 }
+        )
         .map(charArrayToString)
         .filter((s) => /[A-Z]/.test(s));
 
@@ -407,7 +480,12 @@ describe('AWS validation property tests', () => {
     const validBucketNameForArnArb = fc
       .tuple(
         fc.constantFrom(...LOWER_ALPHANUM),
-        fc.array(fc.constantFrom(...[...LOWER_ALPHANUM, '.']), { minLength: 1, maxLength: 60 }).map(charArrayToString),
+        fc
+          .array(fc.constantFrom(...[...LOWER_ALPHANUM, '.']), {
+            minLength: 1,
+            maxLength: 60,
+          })
+          .map(charArrayToString),
         fc.constantFrom(...LOWER_ALPHANUM)
       )
       .map(([first, middle, last]) => first + middle + last)
@@ -422,9 +500,13 @@ describe('AWS validation property tests', () => {
     const validS3ObjectArnArb = fc
       .tuple(
         validBucketNameForArnArb,
-        fc.string({ minLength: 1, maxLength: 100 }).filter((s) => !s.includes('\n') && !s.includes('\r'))
+        fc
+          .string({ minLength: 1, maxLength: 100 })
+          .filter((s) => !s.includes('\n') && !s.includes('\r'))
       )
-      .map(([bucketName, objectKey]) => `arn:aws:s3:::${bucketName}/${objectKey}`);
+      .map(
+        ([bucketName, objectKey]) => `arn:aws:s3:::${bucketName}/${objectKey}`
+      );
 
     it('accepts valid S3 bucket ARNs', () => {
       fc.assert(
@@ -448,7 +530,9 @@ describe('AWS validation property tests', () => {
       const wrongServiceArb = fc
         .constantFrom('dynamodb', 'lambda', 'sqs', 'sns', 'ec2')
         .chain((service) =>
-          validBucketNameForArnArb.map((bucketName) => `arn:aws:${service}:::${bucketName}`)
+          validBucketNameForArnArb.map(
+            (bucketName) => `arn:aws:${service}:::${bucketName}`
+          )
         );
 
       fc.assert(
@@ -462,7 +546,9 @@ describe('AWS validation property tests', () => {
     it('rejects non-ARN strings', () => {
       fc.assert(
         fc.property(
-          fc.string({ minLength: 1 }).filter((s) => !s.startsWith('arn:aws:s3:::')),
+          fc
+            .string({ minLength: 1 })
+            .filter((s) => !s.startsWith('arn:aws:s3:::')),
           (nonArn) => {
             expect(isValidS3Arn(nonArn)).toBe(false);
           }
@@ -473,12 +559,463 @@ describe('AWS validation property tests', () => {
 
     it('rejects ARNs with bucket names starting with hyphen', () => {
       const invalidBucketArnArb = fc
-        .array(fc.constantFrom(...LOWER_ALPHANUM), { minLength: 2, maxLength: 62 })
+        .array(fc.constantFrom(...LOWER_ALPHANUM), {
+          minLength: 2,
+          maxLength: 62,
+        })
         .map((chars) => `arn:aws:s3:::-${chars.join('')}`);
 
       fc.assert(
         fc.property(invalidBucketArnArb, (arn) => {
           expect(isValidS3Arn(arn)).toBe(false);
+        }),
+        { numRuns: 100 }
+      );
+    });
+  });
+
+  describe('dynamodb-table-name validation', () => {
+    // DynamoDB table name characters: alphanumeric, underscore, hyphen, period
+    const DYNAMODB_TABLE_CHARS = [...ALPHANUM, '_', '-', '.'];
+
+    // Generator for valid DynamoDB table names (3-255 chars)
+    const validTableNameArb = fc
+      .array(fc.constantFrom(...DYNAMODB_TABLE_CHARS), {
+        minLength: 3,
+        maxLength: 255,
+      })
+      .map(charArrayToString);
+
+    it('accepts valid DynamoDB table names', () => {
+      fc.assert(
+        fc.property(validTableNameArb, (tableName) => {
+          expect(isValidDynamoDBTableName(tableName)).toBe(true);
+        }),
+        { numRuns: 100 }
+      );
+    });
+
+    it('rejects table names shorter than 3 characters', () => {
+      const shortNameArb = fc
+        .array(fc.constantFrom(...DYNAMODB_TABLE_CHARS), {
+          minLength: 1,
+          maxLength: 2,
+        })
+        .map(charArrayToString);
+
+      fc.assert(
+        fc.property(shortNameArb, (shortName) => {
+          expect(isValidDynamoDBTableName(shortName)).toBe(false);
+        }),
+        { numRuns: 100 }
+      );
+    });
+
+    it('rejects table names longer than 255 characters', () => {
+      const longNameArb = fc
+        .array(fc.constantFrom(...DYNAMODB_TABLE_CHARS), {
+          minLength: 256,
+          maxLength: 300,
+        })
+        .map(charArrayToString);
+
+      fc.assert(
+        fc.property(longNameArb, (longName) => {
+          expect(isValidDynamoDBTableName(longName)).toBe(false);
+        }),
+        { numRuns: 100 }
+      );
+    });
+
+    it('rejects table names with invalid characters', () => {
+      const invalidCharsArb = fc
+        .tuple(
+          fc
+            .array(fc.constantFrom(...DYNAMODB_TABLE_CHARS), {
+              minLength: 1,
+              maxLength: 100,
+            })
+            .map(charArrayToString),
+          fc.constantFrom('@', '#', '$', '%', '&', '*', '!', ' ', '/', '\\'),
+          fc
+            .array(fc.constantFrom(...DYNAMODB_TABLE_CHARS), {
+              minLength: 1,
+              maxLength: 100,
+            })
+            .map(charArrayToString)
+        )
+        .map(
+          ([before, invalidChar, after]) => `${before}${invalidChar}${after}`
+        )
+        .filter((name) => name.length >= 3 && name.length <= 255);
+
+      fc.assert(
+        fc.property(invalidCharsArb, (name) => {
+          expect(isValidDynamoDBTableName(name)).toBe(false);
+        }),
+        { numRuns: 100 }
+      );
+    });
+  });
+
+  describe('dynamodb-table-arn validation', () => {
+    // Generator for valid AWS regions (simplified format: xx-xxxx-N)
+    const validRegionArb = fc.constantFrom(...AWS_REGIONS);
+
+    // Generator for valid 12-digit account IDs
+    const validAccountIdArb = fc
+      .array(fc.constantFrom(...DIGITS), { minLength: 12, maxLength: 12 })
+      .map(charArrayToString);
+
+    // DynamoDB table name characters
+    const DYNAMODB_TABLE_CHARS = [...ALPHANUM, '_', '-', '.'];
+
+    // Generator for valid DynamoDB table names (3-255 chars)
+    const validTableNameArb = fc
+      .array(fc.constantFrom(...DYNAMODB_TABLE_CHARS), {
+        minLength: 3,
+        maxLength: 100,
+      })
+      .map(charArrayToString);
+
+    // Generator for valid DynamoDB table ARNs
+    const validDynamoDBTableArnArb = fc
+      .tuple(validRegionArb, validAccountIdArb, validTableNameArb)
+      .map(
+        ([region, accountId, tableName]) =>
+          `arn:aws:dynamodb:${region}:${accountId}:table/${tableName}`
+      );
+
+    it('accepts valid DynamoDB table ARNs', () => {
+      fc.assert(
+        fc.property(validDynamoDBTableArnArb, (arn) => {
+          expect(isValidDynamoDBTableArn(arn)).toBe(true);
+        }),
+        { numRuns: 100 }
+      );
+    });
+
+    it('rejects ARNs with wrong service', () => {
+      fc.assert(
+        fc.property(
+          validRegionArb,
+          validAccountIdArb,
+          validTableNameArb,
+          (region, accountId, tableName) => {
+            const wrongServiceArn = `arn:aws:s3:${region}:${accountId}:table/${tableName}`;
+            expect(isValidDynamoDBTableArn(wrongServiceArn)).toBe(false);
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
+
+    it('rejects ARNs with invalid account ID', () => {
+      const invalidAccountIdArb = fc
+        .array(fc.constantFrom(...DIGITS), { minLength: 1, maxLength: 20 })
+        .map(charArrayToString)
+        .filter((s) => s.length !== 12);
+
+      fc.assert(
+        fc.property(
+          validRegionArb,
+          invalidAccountIdArb,
+          validTableNameArb,
+          (region, invalidAccountId, tableName) => {
+            const invalidArn = `arn:aws:dynamodb:${region}:${invalidAccountId}:table/${tableName}`;
+            expect(isValidDynamoDBTableArn(invalidArn)).toBe(false);
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
+
+    it('extracts region correctly from valid DynamoDB table ARN', () => {
+      fc.assert(
+        fc.property(
+          validRegionArb,
+          validAccountIdArb,
+          validTableNameArb,
+          (region, accountId, tableName) => {
+            const arn = `arn:aws:dynamodb:${region}:${accountId}:table/${tableName}`;
+            expect(extractRegionFromDynamoDBArn(arn)).toBe(region);
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
+
+    it('extracts account ID correctly from valid DynamoDB table ARN', () => {
+      fc.assert(
+        fc.property(
+          validRegionArb,
+          validAccountIdArb,
+          validTableNameArb,
+          (region, accountId, tableName) => {
+            const arn = `arn:aws:dynamodb:${region}:${accountId}:table/${tableName}`;
+            expect(extractAccountIdFromDynamoDBArn(arn)).toBe(accountId);
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
+  });
+
+  describe('rds-endpoint validation', () => {
+    // Generator for valid AWS regions
+    const validRegionArb = fc.constantFrom(...AWS_REGIONS);
+
+    // Generator for valid RDS identifier (alphanumeric and hyphens)
+    const validIdentifierArb = fc
+      .array(fc.constantFrom(...[...LOWER_ALPHA, ...DIGITS, '-']), {
+        minLength: 1,
+        maxLength: 30,
+      })
+      .map(charArrayToString)
+      .filter(
+        (s) => !s.startsWith('-') && !s.endsWith('-') && !s.includes('--')
+      );
+
+    // Generator for random ID portion
+    const randomIdArb = fc
+      .array(fc.constantFrom(...[...LOWER_ALPHA, ...DIGITS]), {
+        minLength: 5,
+        maxLength: 15,
+      })
+      .map(charArrayToString);
+
+    // Generator for valid RDS endpoints
+    const validRDSEndpointArb = fc
+      .tuple(validIdentifierArb, randomIdArb, validRegionArb)
+      .map(
+        ([identifier, randomId, region]) =>
+          `${identifier}.${randomId}.${region}.rds.amazonaws.com`
+      );
+
+    it('accepts valid RDS endpoints', () => {
+      fc.assert(
+        fc.property(validRDSEndpointArb, (endpoint) => {
+          expect(isValidRDSEndpoint(endpoint)).toBe(true);
+        }),
+        { numRuns: 100 }
+      );
+    });
+
+    it('rejects endpoints with wrong service suffix', () => {
+      fc.assert(
+        fc.property(
+          validIdentifierArb,
+          randomIdArb,
+          validRegionArb,
+          (identifier, randomId, region) => {
+            const wrongServiceEndpoint = `${identifier}.${randomId}.${region}.ec2.amazonaws.com`;
+            expect(isValidRDSEndpoint(wrongServiceEndpoint)).toBe(false);
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
+
+    it('rejects endpoints with invalid region format', () => {
+      const invalidRegionArb = fc
+        .string({ minLength: 1, maxLength: 20 })
+        .filter((s) => !/^[a-z]{2}-[a-z]+-\d$/.test(s));
+
+      fc.assert(
+        fc.property(
+          validIdentifierArb,
+          randomIdArb,
+          invalidRegionArb,
+          (identifier, randomId, invalidRegion) => {
+            const invalidEndpoint = `${identifier}.${randomId}.${invalidRegion}.rds.amazonaws.com`;
+            expect(isValidRDSEndpoint(invalidEndpoint)).toBe(false);
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
+
+    it('extracts region correctly from valid RDS endpoint', () => {
+      fc.assert(
+        fc.property(
+          validIdentifierArb,
+          randomIdArb,
+          validRegionArb,
+          (identifier, randomId, region) => {
+            const endpoint = `${identifier}.${randomId}.${region}.rds.amazonaws.com`;
+            expect(extractRegionFromRDSEndpoint(endpoint)).toBe(region);
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
+  });
+
+  describe('rds-cluster-id validation', () => {
+    // Generator for valid RDS cluster IDs
+    // Rules: 1-63 chars, starts with letter, alphanumeric + hyphens, no trailing hyphen, no consecutive hyphens
+    const validClusterIdArb = fc
+      .tuple(
+        // First character: must be a letter
+        fc.constantFrom(...[...UPPER_ALPHA, ...LOWER_ALPHA]),
+        // Middle characters: alphanumeric or single hyphens (no consecutive)
+        fc
+          .array(fc.constantFrom(...[...ALPHANUM, '-']), {
+            minLength: 0,
+            maxLength: 61,
+          })
+          .map((chars) => {
+            // Remove consecutive hyphens
+            const result: string[] = [];
+            for (const char of chars) {
+              if (char === '-' && result[result.length - 1] === '-') {
+                continue;
+              }
+              result.push(char);
+            }
+            return result.join('');
+          })
+      )
+      .map(([first, rest]) => first + rest)
+      .filter((id) => {
+        // Ensure length is 1-63
+        if (id.length < 1 || id.length > 63) return false;
+        // Ensure no trailing hyphen
+        if (id.endsWith('-')) return false;
+        // Ensure no consecutive hyphens
+        if (id.includes('--')) return false;
+        return true;
+      });
+
+    it('accepts valid RDS cluster IDs', () => {
+      fc.assert(
+        fc.property(validClusterIdArb, (clusterId) => {
+          expect(isValidRDSClusterId(clusterId)).toBe(true);
+        }),
+        { numRuns: 100 }
+      );
+    });
+
+    it('rejects cluster IDs not starting with a letter', () => {
+      const invalidStartArb = fc
+        .tuple(
+          fc.constantFrom(...[...DIGITS, '-']),
+          fc
+            .array(fc.constantFrom(...ALPHANUM), {
+              minLength: 0,
+              maxLength: 62,
+            })
+            .map(charArrayToString)
+        )
+        .map(([first, rest]) => first + rest)
+        .filter((id) => id.length >= 1 && id.length <= 63);
+
+      fc.assert(
+        fc.property(invalidStartArb, (clusterId) => {
+          expect(isValidRDSClusterId(clusterId)).toBe(false);
+        }),
+        { numRuns: 100 }
+      );
+    });
+
+    it('rejects cluster IDs ending with hyphen', () => {
+      const hyphenEndArb = fc
+        .tuple(
+          fc.constantFrom(...[...UPPER_ALPHA, ...LOWER_ALPHA]),
+          fc
+            .array(fc.constantFrom(...ALPHANUM), {
+              minLength: 0,
+              maxLength: 61,
+            })
+            .map(charArrayToString)
+        )
+        .map(([first, rest]) => `${first}${rest}-`)
+        .filter((id) => id.length >= 1 && id.length <= 63);
+
+      fc.assert(
+        fc.property(hyphenEndArb, (clusterId) => {
+          expect(isValidRDSClusterId(clusterId)).toBe(false);
+        }),
+        { numRuns: 100 }
+      );
+    });
+
+    it('rejects cluster IDs with consecutive hyphens', () => {
+      const consecutiveHyphenArb = fc
+        .tuple(
+          fc.constantFrom(...[...UPPER_ALPHA, ...LOWER_ALPHA]),
+          fc
+            .array(fc.constantFrom(...ALPHANUM), {
+              minLength: 1,
+              maxLength: 30,
+            })
+            .map(charArrayToString),
+          fc
+            .array(fc.constantFrom(...ALPHANUM), {
+              minLength: 1,
+              maxLength: 30,
+            })
+            .map(charArrayToString)
+        )
+        .map(([first, before, after]) => `${first}${before}--${after}`)
+        .filter((id) => id.length >= 1 && id.length <= 63);
+
+      fc.assert(
+        fc.property(consecutiveHyphenArb, (clusterId) => {
+          expect(isValidRDSClusterId(clusterId)).toBe(false);
+        }),
+        { numRuns: 100 }
+      );
+    });
+
+    it('rejects cluster IDs longer than 63 characters', () => {
+      const longIdArb = fc
+        .tuple(
+          fc.constantFrom(...[...UPPER_ALPHA, ...LOWER_ALPHA]),
+          fc
+            .array(fc.constantFrom(...ALPHANUM), {
+              minLength: 63,
+              maxLength: 100,
+            })
+            .map(charArrayToString)
+        )
+        .map(([first, rest]) => first + rest);
+
+      fc.assert(
+        fc.property(longIdArb, (clusterId) => {
+          expect(isValidRDSClusterId(clusterId)).toBe(false);
+        }),
+        { numRuns: 100 }
+      );
+    });
+
+    it('rejects cluster IDs with invalid characters', () => {
+      const invalidCharsArb = fc
+        .tuple(
+          fc.constantFrom(...[...UPPER_ALPHA, ...LOWER_ALPHA]),
+          fc
+            .array(fc.constantFrom(...ALPHANUM), {
+              minLength: 1,
+              maxLength: 30,
+            })
+            .map(charArrayToString),
+          fc.constantFrom('_', '.', '@', '#', '$', '%', '&', '*', '!', ' '),
+          fc
+            .array(fc.constantFrom(...ALPHANUM), {
+              minLength: 1,
+              maxLength: 30,
+            })
+            .map(charArrayToString)
+        )
+        .map(
+          ([first, before, invalidChar, after]) =>
+            `${first}${before}${invalidChar}${after}`
+        )
+        .filter((id) => id.length >= 1 && id.length <= 63);
+
+      fc.assert(
+        fc.property(invalidCharsArb, (clusterId) => {
+          expect(isValidRDSClusterId(clusterId)).toBe(false);
         }),
         { numRuns: 100 }
       );

@@ -1,4 +1,7 @@
-import type { AWSValidationType, ValidationScope } from '../aws/aws-validation-types';
+import type {
+  AWSValidationType,
+  ValidationScope,
+} from '../aws/aws-validation-types';
 
 /**
  * Environment variable types supported by the schema.

@@ -183,7 +183,12 @@ export function isValidIAMUserArn(value: string): boolean {
 export function extractAccountIdFromIAMArn(value: string): string | undefined {
   // IAM ARN format: arn:aws:iam::<account-id>:role/<name> or arn:aws:iam::<account-id>:user/<name>
   const parts = value.split(':');
-  if (parts.length >= 5 && parts[0] === 'arn' && parts[1] === 'aws' && parts[2] === 'iam') {
+  if (
+    parts.length >= 5 &&
+    parts[0] === 'arn' &&
+    parts[1] === 'aws' &&
+    parts[2] === 'iam'
+  ) {
     const accountId = parts[4];
     if (AWS_ACCOUNT_ID_PATTERN.test(accountId)) {
       return accountId;
@@ -448,4 +453,269 @@ const S3_ARN_PATTERN = /^arn:aws:s3:::[a-z0-9][a-z0-9.-]{1,61}[a-z0-9](\/.*)?$/;
  */
 export function isValidS3Arn(value: string): boolean {
   return S3_ARN_PATTERN.test(value);
+}
+
+/**
+ * Regular expression pattern for DynamoDB table name validation.
+ *
+ * DynamoDB table names must:
+ * - Be 3-255 characters long
+ * - Contain only alphanumeric characters, underscores, hyphens, and periods
+ *
+ * @see https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.NamingRulesDataTypes.html
+ */
+const DYNAMODB_TABLE_NAME_PATTERN = /^[a-zA-Z0-9_.-]{3,255}$/;
+
+/**
+ * Validates a DynamoDB table name against AWS naming rules.
+ *
+ * DynamoDB table names must:
+ * - Be 3-255 characters long
+ * - Contain only alphanumeric characters (a-z, A-Z, 0-9), underscores (_), hyphens (-), and periods (.)
+ *
+ * @param value - The table name to validate
+ * @returns true if the table name is valid, false otherwise
+ *
+ * @see https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.NamingRulesDataTypes.html
+ *
+ * @example
+ * ```typescript
+ * isValidDynamoDBTableName('my-table');           // true
+ * isValidDynamoDBTableName('MyTable_123');        // true
+ * isValidDynamoDBTableName('table.name');         // true
+ * isValidDynamoDBTableName('ab');                 // false (too short)
+ * isValidDynamoDBTableName('a'.repeat(256));      // false (too long)
+ * isValidDynamoDBTableName('table name');         // false (contains space)
+ * isValidDynamoDBTableName('table@name');         // false (invalid character)
+ * ```
+ */
+export function isValidDynamoDBTableName(value: string): boolean {
+  return DYNAMODB_TABLE_NAME_PATTERN.test(value);
+}
+
+/**
+ * Regular expression pattern for DynamoDB table ARN validation.
+ *
+ * Format: arn:aws:dynamodb:<region>:<account-id>:table/<table-name>
+ * - Region: AWS region code (e.g., us-east-1, ap-northeast-1)
+ * - Account ID: 12-digit AWS account ID
+ * - Table name: 3-255 characters, alphanumeric plus _.-
+ */
+const DYNAMODB_TABLE_ARN_PATTERN =
+  /^arn:aws:dynamodb:[a-z]{2}-[a-z]+-\d:\d{12}:table\/[a-zA-Z0-9_.-]{3,255}$/;
+
+/**
+ * Validates a DynamoDB table ARN.
+ *
+ * DynamoDB table ARNs follow the format:
+ * arn:aws:dynamodb:<region>:<account-id>:table/<table-name>
+ *
+ * @param value - The DynamoDB table ARN to validate
+ * @returns true if the value is a valid DynamoDB table ARN, false otherwise
+ *
+ * @see https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.NamingRulesDataTypes.html
+ *
+ * @example
+ * ```typescript
+ * isValidDynamoDBTableArn('arn:aws:dynamodb:us-east-1:123456789012:table/MyTable'); // true
+ * isValidDynamoDBTableArn('arn:aws:dynamodb:ap-northeast-1:123456789012:table/my-table_123'); // true
+ * isValidDynamoDBTableArn('arn:aws:dynamodb:us-east-1:123456789012:table/ab'); // false (table name too short)
+ * isValidDynamoDBTableArn('arn:aws:s3:::my-bucket'); // false (wrong service)
+ * isValidDynamoDBTableArn('invalid'); // false
+ * ```
+ */
+export function isValidDynamoDBTableArn(value: string): boolean {
+  return DYNAMODB_TABLE_ARN_PATTERN.test(value);
+}
+
+/**
+ * Extracts the AWS region from a DynamoDB table ARN.
+ *
+ * @param value - The DynamoDB table ARN to extract region from
+ * @returns The region code, or undefined if extraction fails
+ *
+ * @example
+ * ```typescript
+ * extractRegionFromDynamoDBArn('arn:aws:dynamodb:us-east-1:123456789012:table/MyTable'); // 'us-east-1'
+ * extractRegionFromDynamoDBArn('arn:aws:dynamodb:ap-northeast-1:123456789012:table/MyTable'); // 'ap-northeast-1'
+ * extractRegionFromDynamoDBArn('invalid'); // undefined
+ * ```
+ */
+export function extractRegionFromDynamoDBArn(
+  value: string
+): string | undefined {
+  // DynamoDB ARN format: arn:aws:dynamodb:<region>:<account-id>:table/<table-name>
+  const parts = value.split(':');
+  if (
+    parts.length >= 6 &&
+    parts[0] === 'arn' &&
+    parts[1] === 'aws' &&
+    parts[2] === 'dynamodb'
+  ) {
+    const region = parts[3];
+    // Basic region format check: xx-xxxx-N
+    if (/^[a-z]{2}-[a-z]+-\d$/.test(region)) {
+      return region;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Extracts the AWS account ID from a DynamoDB table ARN.
+ *
+ * @param value - The DynamoDB table ARN to extract account ID from
+ * @returns The 12-digit account ID, or undefined if extraction fails
+ *
+ * @example
+ * ```typescript
+ * extractAccountIdFromDynamoDBArn('arn:aws:dynamodb:us-east-1:123456789012:table/MyTable'); // '123456789012'
+ * extractAccountIdFromDynamoDBArn('invalid'); // undefined
+ * ```
+ */
+export function extractAccountIdFromDynamoDBArn(
+  value: string
+): string | undefined {
+  // DynamoDB ARN format: arn:aws:dynamodb:<region>:<account-id>:table/<table-name>
+  const parts = value.split(':');
+  if (
+    parts.length >= 6 &&
+    parts[0] === 'arn' &&
+    parts[1] === 'aws' &&
+    parts[2] === 'dynamodb'
+  ) {
+    const accountId = parts[4];
+    if (/^\d{12}$/.test(accountId)) {
+      return accountId;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Regular expression pattern for RDS endpoint validation.
+ *
+ * RDS endpoints follow the format:
+ * <db-identifier>.<random-id>.<region>.rds.amazonaws.com
+ *
+ * Examples:
+ * - mydb.abc123xyz.us-east-1.rds.amazonaws.com
+ * - my-cluster.cluster-abc123xyz.ap-northeast-1.rds.amazonaws.com
+ *
+ * @see https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_ConnectToInstance.html
+ */
+const RDS_ENDPOINT_PATTERN =
+  /^[\w-]+\.[\w-]+\.[a-z]{2}-[a-z]+-\d\.rds\.amazonaws\.com$/;
+
+/**
+ * Validates an RDS endpoint.
+ *
+ * RDS endpoints follow the format:
+ * <db-identifier>.<random-id>.<region>.rds.amazonaws.com
+ *
+ * This includes both RDS instance endpoints and Aurora cluster endpoints.
+ *
+ * @param value - The RDS endpoint to validate
+ * @returns true if the value is a valid RDS endpoint, false otherwise
+ *
+ * @see https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_ConnectToInstance.html
+ *
+ * @example
+ * ```typescript
+ * isValidRDSEndpoint('mydb.abc123xyz.us-east-1.rds.amazonaws.com'); // true
+ * isValidRDSEndpoint('my-cluster.cluster-abc123xyz.ap-northeast-1.rds.amazonaws.com'); // true
+ * isValidRDSEndpoint('mydb.us-east-1.rds.amazonaws.com'); // false (missing random id)
+ * isValidRDSEndpoint('mydb.abc123xyz.invalid-region.rds.amazonaws.com'); // false (invalid region format)
+ * isValidRDSEndpoint('mydb.abc123xyz.us-east-1.ec2.amazonaws.com'); // false (wrong service)
+ * ```
+ */
+export function isValidRDSEndpoint(value: string): boolean {
+  return RDS_ENDPOINT_PATTERN.test(value);
+}
+
+/**
+ * Extracts the AWS region from an RDS endpoint.
+ *
+ * @param value - The RDS endpoint to extract region from
+ * @returns The region code, or undefined if extraction fails
+ *
+ * @example
+ * ```typescript
+ * extractRegionFromRDSEndpoint('mydb.abc123xyz.us-east-1.rds.amazonaws.com'); // 'us-east-1'
+ * extractRegionFromRDSEndpoint('my-cluster.cluster-abc123xyz.ap-northeast-1.rds.amazonaws.com'); // 'ap-northeast-1'
+ * extractRegionFromRDSEndpoint('invalid'); // undefined
+ * ```
+ */
+export function extractRegionFromRDSEndpoint(
+  value: string
+): string | undefined {
+  // RDS endpoint format: <identifier>.<random>.<region>.rds.amazonaws.com
+  const parts = value.split('.');
+  // Expected parts: [identifier, random, region, 'rds', 'amazonaws', 'com']
+  if (parts.length >= 6 && parts[parts.length - 3] === 'rds') {
+    const region = parts[parts.length - 4];
+    // Basic region format check: xx-xxxx-N
+    if (/^[a-z]{2}-[a-z]+-\d$/.test(region)) {
+      return region;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Validates an RDS cluster identifier.
+ *
+ * RDS cluster identifiers must:
+ * - Be 1-63 characters long
+ * - Start with a letter
+ * - Contain only alphanumeric characters and hyphens
+ * - Not end with a hyphen
+ * - Not contain consecutive hyphens
+ *
+ * @param value - The cluster identifier to validate
+ * @returns true if the cluster identifier is valid, false otherwise
+ *
+ * @see https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_Limits.html
+ *
+ * @example
+ * ```typescript
+ * isValidRDSClusterId('my-cluster');           // true
+ * isValidRDSClusterId('myCluster123');         // true
+ * isValidRDSClusterId('a');                    // true (minimum 1 character)
+ * isValidRDSClusterId('my-db-cluster');        // true
+ * isValidRDSClusterId('1-cluster');            // false (must start with letter)
+ * isValidRDSClusterId('-cluster');             // false (must start with letter)
+ * isValidRDSClusterId('cluster-');             // false (cannot end with hyphen)
+ * isValidRDSClusterId('my--cluster');          // false (consecutive hyphens)
+ * isValidRDSClusterId('a'.repeat(64));         // false (too long)
+ * isValidRDSClusterId('my_cluster');           // false (underscore not allowed)
+ * ```
+ */
+export function isValidRDSClusterId(value: string): boolean {
+  // Length: 1-63 characters
+  if (value.length < 1 || value.length > 63) {
+    return false;
+  }
+
+  // Must start with a letter
+  if (!/^[a-zA-Z]/.test(value)) {
+    return false;
+  }
+
+  // Only alphanumeric characters and hyphens
+  if (!/^[a-zA-Z0-9-]+$/.test(value)) {
+    return false;
+  }
+
+  // Must not end with a hyphen
+  if (value.endsWith('-')) {
+    return false;
+  }
+
+  // Must not contain consecutive hyphens
+  if (value.includes('--')) {
+    return false;
+  }
+
+  return true;
 }

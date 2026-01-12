@@ -87,10 +87,7 @@ describe('createEnv', () => {
     });
 
     it('returns undefined when no value and no default', () => {
-      const env = createEnv(
-        { OPTIONAL: { type: 'string' } },
-        { env: {} }
-      );
+      const env = createEnv({ OPTIONAL: { type: 'string' } }, { env: {} });
       expect(env.OPTIONAL).toBeUndefined();
     });
   });
@@ -98,7 +95,12 @@ describe('createEnv', () => {
   describe('enum validation', () => {
     it('accepts valid enum value', () => {
       const env = createEnv(
-        { NODE_ENV: { type: 'string', enum: ['development', 'production'] as const } },
+        {
+          NODE_ENV: {
+            type: 'string',
+            enum: ['development', 'production'] as const,
+          },
+        },
         { env: { NODE_ENV: 'production' } }
       );
       expect(env.NODE_ENV).toBe('production');
@@ -107,7 +109,12 @@ describe('createEnv', () => {
     it('throws for invalid enum value', () => {
       expect(() =>
         createEnv(
-          { NODE_ENV: { type: 'string', enum: ['development', 'production'] as const } },
+          {
+            NODE_ENV: {
+              type: 'string',
+              enum: ['development', 'production'] as const,
+            },
+          },
           { env: { NODE_ENV: 'staging' } }
         )
       ).toThrow(EnvironmentValidationError);
@@ -169,7 +176,6 @@ describe('createEnv', () => {
       ).toThrow(EnvironmentValidationError);
     });
   });
-
 
   describe('error aggregation', () => {
     it('collects multiple errors in single throw', () => {

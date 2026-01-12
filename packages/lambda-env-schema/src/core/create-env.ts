@@ -7,18 +7,18 @@ import type { ValidationError } from '../share/errors';
 import { EnvironmentValidationError } from '../share/errors';
 import type { EnvSchema, InferEnv, SchemaItem } from '../share/types';
 import {
-    coerceArray,
-    coerceBoolean,
-    coerceJson,
-    coerceNumber,
-    coerceString,
+  coerceArray,
+  coerceBoolean,
+  coerceJson,
+  coerceNumber,
+  coerceString,
 } from './coercion';
 import {
-    applyDefault,
-    checkConstraints,
-    checkEnum,
-    checkRequired,
-    formatValue,
+  applyDefault,
+  checkConstraints,
+  checkEnum,
+  checkRequired,
+  formatValue,
 } from './validation';
 
 /**

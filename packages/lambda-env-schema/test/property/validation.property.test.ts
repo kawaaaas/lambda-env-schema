@@ -7,7 +7,10 @@ import {
   checkRequired,
   formatValue as validationFormatValue,
 } from '../../src/core/validation';
-import { EnvironmentValidationError, formatValue } from '../../src/share/errors';
+import {
+  EnvironmentValidationError,
+  formatValue,
+} from '../../src/share/errors';
 import type {
   ArraySchema,
   NumberSchema,
