@@ -35,15 +35,35 @@ export type {
 } from './aws-validation-types';
 
 // =============================================================================
+// Parsed Types
+// =============================================================================
+
+export type {
+    BaseParsedValue,
+    ParsedArn,
+    ParsedDynamoDBTableArn,
+    ParsedIAMRoleArn,
+    ParsedKMSKeyArn,
+    ParsedLambdaFunctionArn,
+    ParsedRDSEndpoint,
+    ParsedS3Arn,
+    ParsedS3Uri,
+    ParsedSecretsManagerArn,
+    ParsedSNSTopicArn,
+    ParsedSQSQueueArn,
+    ParsedSQSQueueUrl
+} from './parsed-types';
+
+// =============================================================================
 // Service-specific Validators
 // =============================================================================
 
 // API Gateway
 export { isValidApiGatewayId } from './api-gateway-validators';
-
+// Generic ARN
+export { isValidArn, parseArn } from './arn-validators';
 // CloudFront
 export { isValidCloudFrontDistId } from './cloudfront-validators';
-
 // DynamoDB
 export {
     extractAccountIdFromDynamoDBArn,
@@ -51,10 +71,8 @@ export {
     isValidDynamoDBTableArn,
     isValidDynamoDBTableName
 } from './dynamodb-validators';
-
 // EventBridge
 export { isValidEventBusName } from './eventbridge-validators';
-
 // IAM
 export {
     extractAccountIdFromIAMArn,
@@ -62,7 +80,6 @@ export {
     isValidIAMRoleArn,
     isValidIAMUserArn
 } from './iam-validators';
-
 // KMS
 export {
     extractAccountIdFromKMSKeyArn,
@@ -70,34 +87,28 @@ export {
     isValidKMSKeyArn,
     isValidKMSKeyId
 } from './kms-validators';
-
 // Lambda
-export { isValidLambdaFunctionName } from './lambda-validators';
-
+export { isValidLambdaFunctionArn, isValidLambdaFunctionName, parseLambdaFunctionArn } from './lambda-validators';
 // RDS
 export {
     extractRegionFromRDSEndpoint,
     isValidRDSClusterId,
     isValidRDSEndpoint
 } from './rds-validators';
-
 // S3
-export { isValidS3Arn, isValidS3BucketName } from './s3-validators';
-
+export { isValidS3Arn, isValidS3BucketName, isValidS3Uri, parseS3Arn, parseS3Uri } from './s3-validators';
 // Secrets Manager
 export {
     extractAccountIdFromSecretsManagerArn,
     extractRegionFromSecretsManagerArn,
     isValidSecretsManagerArn
 } from './secrets-manager-validators';
-
 // SNS
 export {
     extractAccountIdFromSNSTopicArn,
     extractRegionFromSNSTopicArn,
     isValidSNSTopicArn
 } from './sns-validators';
-
 // SQS
 export {
     extractAccountIdFromSQSQueueArn,
@@ -107,10 +118,8 @@ export {
     isValidSQSQueueArn,
     isValidSQSQueueUrl
 } from './sqs-validators';
-
 // SSM
 export { isValidSSMParameterName } from './ssm-validators';
-
 // VPC & EC2
 export {
     isValidEc2InstanceId,

@@ -1,6 +1,8 @@
 /**
- * S3 (Simple Storage Service) validators.
+ * S3 (Simple Storage Service) validators and parsers.
  */
+
+import type { ParsedS3Arn, ParsedS3Uri } from './parsed-types';
 
 /**
  * Regular expression pattern for IP address format.
@@ -128,4 +130,97 @@ const S3_ARN_PATTERN = /^arn:aws:s3:::[a-z0-9][a-z0-9.-]{1,61}[a-z0-9](\/.*)?$/;
  */
 export function isValidS3Arn(value: string): boolean {
   return S3_ARN_PATTERN.test(value);
+}
+
+
+/**
+ * Regular expression pattern for S3 URI validation.
+ *
+ * S3 URIs follow the format: s3://<bucket>/<key>
+ * - Bucket name must follow S3 bucket naming rules
+ * - Key must be at least one character
+ */
+const S3_URI_PATTERN = /^s3:\/\/([a-z0-9][a-z0-9.-]{1,61}[a-z0-9])\/(.+)$/;
+
+/**
+ * Validates an S3 URI.
+ *
+ * S3 URIs follow the format: s3://<bucket>/<key>
+ *
+ * @param value - The S3 URI to validate
+ * @returns true if the value is a valid S3 URI, false otherwise
+ *
+ * @example
+ * ```typescript
+ * isValidS3Uri('s3://my-bucket/my-object');           // true
+ * isValidS3Uri('s3://my-bucket/path/to/object.txt'); // true
+ * isValidS3Uri('s3://my-bucket');                     // false (no key)
+ * isValidS3Uri('s3://my-bucket/');                    // false (empty key)
+ * isValidS3Uri('https://my-bucket/object');           // false (wrong scheme)
+ * ```
+ */
+export function isValidS3Uri(value: string): boolean {
+  return S3_URI_PATTERN.test(value);
+}
+
+/**
+ * Parses an S3 URI into its components.
+ *
+ * @param value - The S3 URI to parse
+ * @returns Parsed S3 URI object, or null if invalid
+ *
+ * @example
+ * ```typescript
+ * parseS3Uri('s3://my-bucket/my-object');
+ * // { value: 's3://my-bucket/my-object', bucket: 'my-bucket', key: 'my-object' }
+ *
+ * parseS3Uri('s3://my-bucket/path/to/object.txt');
+ * // { value: 's3://...', bucket: 'my-bucket', key: 'path/to/object.txt' }
+ *
+ * parseS3Uri('invalid');
+ * // null
+ * ```
+ */
+export function parseS3Uri(value: string): ParsedS3Uri | null {
+  const match = value.match(S3_URI_PATTERN);
+  if (!match) return null;
+
+  return {
+    value,
+    bucket: match[1],
+    key: match[2],
+  };
+}
+
+/**
+ * Parses an S3 ARN into its components.
+ *
+ * @param value - The S3 ARN to parse
+ * @returns Parsed S3 ARN object, or null if invalid
+ *
+ * @example
+ * ```typescript
+ * parseS3Arn('arn:aws:s3:::my-bucket');
+ * // { value: 'arn:aws:s3:::my-bucket', bucketName: 'my-bucket', key: undefined, isObject: false }
+ *
+ * parseS3Arn('arn:aws:s3:::my-bucket/path/to/object.txt');
+ * // { value: 'arn:aws:s3:::...', bucketName: 'my-bucket', key: 'path/to/object.txt', isObject: true }
+ *
+ * parseS3Arn('invalid');
+ * // null
+ * ```
+ */
+export function parseS3Arn(value: string): ParsedS3Arn | null {
+  if (!isValidS3Arn(value)) return null;
+
+  // arn:aws:s3:::<bucket-name>[/<object-key>]
+  const match = value.match(/^arn:aws:s3:::([^/]+)(\/(.*))?$/);
+  if (!match) return null;
+
+  return {
+    value,
+    bucketName: match[1],
+    key: match[3] || undefined,
+    isObject: !!match[3],
+  };
 }

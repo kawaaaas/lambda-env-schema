@@ -1,6 +1,8 @@
 /**
- * SQS (Simple Queue Service) validators.
+ * SQS (Simple Queue Service) validators and parsers.
  */
+
+import type { ParsedSQSQueueArn, ParsedSQSQueueUrl } from './parsed-types';
 
 /**
  * Regular expression pattern for SQS queue URL validation.
@@ -193,4 +195,107 @@ export function extractAccountIdFromSQSQueueArn(
     }
   }
   return undefined;
+}
+
+
+/**
+ * Parses an SQS Queue URL into its components.
+ *
+ * @param value - The SQS Queue URL to parse
+ * @returns Parsed SQS Queue URL object, or null if invalid
+ *
+ * @example
+ * ```typescript
+ * parseSQSQueueUrl('https://sqs.us-east-1.amazonaws.com/123456789012/my-queue');
+ * // {
+ * //   value: 'https://sqs.us-east-1.amazonaws.com/123456789012/my-queue',
+ * //   queueName: 'my-queue',
+ * //   accountId: '123456789012',
+ * //   region: 'us-east-1',
+ * //   isFifo: false
+ * // }
+ *
+ * parseSQSQueueUrl('https://sqs.us-east-1.amazonaws.com/123456789012/my-queue.fifo');
+ * // {
+ * //   value: 'https://sqs.us-east-1.amazonaws.com/123456789012/my-queue.fifo',
+ * //   queueName: 'my-queue.fifo',
+ * //   accountId: '123456789012',
+ * //   region: 'us-east-1',
+ * //   isFifo: true
+ * // }
+ *
+ * parseSQSQueueUrl('invalid');
+ * // null
+ * ```
+ */
+export function parseSQSQueueUrl(value: string): ParsedSQSQueueUrl | null {
+  if (!isValidSQSQueueUrl(value)) return null;
+
+  const region = extractRegionFromSQSQueueUrl(value);
+  const accountId = extractAccountIdFromSQSQueueUrl(value);
+
+  // Extract queue name from URL
+  const match = value.match(/\/(\d{12})\/([\w-]+(\.fifo)?)$/);
+  if (!match || !region || !accountId) return null;
+
+  const queueName = match[2];
+
+  return {
+    value,
+    queueName,
+    accountId,
+    region,
+    isFifo: queueName.endsWith('.fifo'),
+  };
+}
+
+/**
+ * Parses an SQS Queue ARN into its components.
+ *
+ * @param value - The SQS Queue ARN to parse
+ * @returns Parsed SQS Queue ARN object, or null if invalid
+ *
+ * @example
+ * ```typescript
+ * parseSQSQueueArn('arn:aws:sqs:us-east-1:123456789012:my-queue');
+ * // {
+ * //   value: 'arn:aws:sqs:us-east-1:123456789012:my-queue',
+ * //   queueName: 'my-queue',
+ * //   accountId: '123456789012',
+ * //   region: 'us-east-1',
+ * //   isFifo: false
+ * // }
+ *
+ * parseSQSQueueArn('arn:aws:sqs:us-east-1:123456789012:my-queue.fifo');
+ * // {
+ * //   value: 'arn:aws:sqs:us-east-1:123456789012:my-queue.fifo',
+ * //   queueName: 'my-queue.fifo',
+ * //   accountId: '123456789012',
+ * //   region: 'us-east-1',
+ * //   isFifo: true
+ * // }
+ *
+ * parseSQSQueueArn('invalid');
+ * // null
+ * ```
+ */
+export function parseSQSQueueArn(value: string): ParsedSQSQueueArn | null {
+  if (!isValidSQSQueueArn(value)) return null;
+
+  const region = extractRegionFromSQSQueueArn(value);
+  const accountId = extractAccountIdFromSQSQueueArn(value);
+
+  // arn:aws:sqs:<region>:<account-id>:<queue-name>
+  const parts = value.split(':');
+  if (parts.length < 6 || !region || !accountId) return null;
+
+  const queueName = parts[5];
+
+  return {
+    value,
+    queueName,
+    accountId,
+    region,
+    isFifo: queueName.endsWith('.fifo'),
+  };
 }

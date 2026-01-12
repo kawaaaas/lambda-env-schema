@@ -1,6 +1,7 @@
 /**
- * SNS (Simple Notification Service) validators.
+ * SNS (Simple Notification Service) validators and parsers.
  */
+
 
 /**
  * Regular expression pattern for SNS topic ARN validation.
@@ -106,4 +107,43 @@ export function extractAccountIdFromSNSTopicArn(
     }
   }
   return undefined;
+}
+
+
+/**
+ * Parses an SNS Topic ARN into its components.
+ *
+ * @param value - The SNS Topic ARN to parse
+ * @returns Parsed SNS Topic ARN object, or null if invalid
+ *
+ * @example
+ * ```typescript
+ * parseSNSTopicArn('arn:aws:sns:us-east-1:123456789012:my-topic');
+ * // {
+ * //   value: 'arn:aws:sns:us-east-1:123456789012:my-topic',
+ * //   topicName: 'my-topic',
+ * //   region: 'us-east-1',
+ * //   accountId: '123456789012'
+ * // }
+ *
+ * parseSNSTopicArn('invalid');
+ * // null
+ * ```
+ */
+export function parseSNSTopicArn(value: string): ParsedSNSTopicArn | null {
+  if (!isValidSNSTopicArn(value)) return null;
+
+  const region = extractRegionFromSNSTopicArn(value);
+  const accountId = extractAccountIdFromSNSTopicArn(value);
+
+  // arn:aws:sns:<region>:<account-id>:<topic-name>
+  const parts = value.split(':');
+  if (parts.length < 6 || !region || !accountId) return null;
+
+  return {
+    value,
+    topicName: parts[5],
+    region,
+    accountId,
+  };
 }

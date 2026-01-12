@@ -1,13 +1,16 @@
 /**
- * IAM (Identity and Access Management) validators.
+ * IAM (Identity and Access Management) validators and parsers.
  */
+
+import type { ParsedIAMRoleArn } from './parsed-types';
 
 /**
  * Regular expression pattern for IAM Role ARN validation.
- * Format: arn:aws:iam::<account-id>:role/<role-name>
+ * Format: arn:aws:iam::<account-id>:role[/path]/<role-name>
+ * Path: optional, can contain multiple segments (e.g., /service-role/)
  * Role name: 1-64 characters, alphanumeric plus +=,.@_-
  */
-const IAM_ROLE_ARN_PATTERN = /^arn:aws:iam::\d{12}:role\/[\w+=,.@-]{1,64}$/;
+const IAM_ROLE_ARN_PATTERN = /^arn:aws:iam::\d{12}:role(\/[\w+=,.@-]+)*\/[\w+=,.@-]{1,64}$/;
 
 /**
  * Regular expression pattern for IAM User ARN validation.
@@ -25,8 +28,9 @@ const AWS_ACCOUNT_ID_PATTERN = /^\d{12}$/;
 /**
  * Checks if a value is a valid IAM Role ARN.
  *
- * IAM Role ARNs follow the format: arn:aws:iam::<account-id>:role/<role-name>
+ * IAM Role ARNs follow the format: arn:aws:iam::<account-id>:role[/path]/<role-name>
  * - Account ID: exactly 12 digits
+ * - Path: optional, can contain multiple segments (e.g., /service-role/)
  * - Role name: 1-64 characters, alphanumeric plus +=,.@_-
  *
  * @param value - The value to validate
@@ -36,6 +40,7 @@ const AWS_ACCOUNT_ID_PATTERN = /^\d{12}$/;
  * ```typescript
  * isValidIAMRoleArn('arn:aws:iam::123456789012:role/MyRole'); // true
  * isValidIAMRoleArn('arn:aws:iam::123456789012:role/my-role_name'); // true
+ * isValidIAMRoleArn('arn:aws:iam::123456789012:role/service-role/MyRole'); // true (with path)
  * isValidIAMRoleArn('arn:aws:iam::123456789012:user/MyUser'); // false (wrong type)
  * isValidIAMRoleArn('invalid'); // false
  * ```
@@ -118,4 +123,65 @@ export function extractRegionFromIAMArn(_value: string): string | undefined {
   // IAM is a global service, so IAM ARNs do not contain a region
   // The region field in IAM ARNs is always empty: arn:aws:iam::<account-id>:...
   return undefined;
+}
+
+
+/**
+ * Parses an IAM Role ARN into its components.
+ *
+ * @param value - The IAM Role ARN to parse
+ * @returns Parsed IAM Role ARN object, or null if invalid
+ *
+ * @example
+ * ```typescript
+ * parseIAMRoleArn('arn:aws:iam::123456789012:role/MyRole');
+ * // {
+ * //   value: 'arn:aws:iam::123456789012:role/MyRole',
+ * //   roleName: 'MyRole',
+ * //   accountId: '123456789012',
+ * //   path: undefined
+ * // }
+ *
+ * parseIAMRoleArn('arn:aws:iam::123456789012:role/service-role/MyRole');
+ * // {
+ * //   value: 'arn:aws:iam::123456789012:role/service-role/MyRole',
+ * //   roleName: 'MyRole',
+ * //   accountId: '123456789012',
+ * //   path: '/service-role/'
+ * // }
+ *
+ * parseIAMRoleArn('invalid');
+ * // null
+ * ```
+ */
+export function parseIAMRoleArn(value: string): ParsedIAMRoleArn | null {
+  if (!isValidIAMRoleArn(value)) return null;
+
+  const accountId = extractAccountIdFromIAMArn(value);
+  if (!accountId) return null;
+
+  // arn:aws:iam::<account-id>:role[/path]/<role-name>
+  // Extract everything after "role/"
+  const rolePartMatch = value.match(/:role\/(.+)$/);
+  if (!rolePartMatch) return null;
+
+  const rolePart = rolePartMatch[1];
+  const segments = rolePart.split('/');
+  
+  // The last segment is the role name
+  const roleName = segments[segments.length - 1];
+  
+  // If there are more than one segment, the rest is the path
+  let path: string | undefined;
+  if (segments.length > 1) {
+    // Path includes leading and trailing slashes
+    path = '/' + segments.slice(0, -1).join('/') + '/';
+  }
+
+  return {
+    value,
+    roleName,
+    accountId,
+    path,
+  };
 }

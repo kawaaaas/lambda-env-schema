@@ -1,6 +1,8 @@
 /**
- * DynamoDB validators.
+ * DynamoDB validators and parsers.
  */
+
+import type { ParsedDynamoDBTableArn } from './parsed-types';
 
 /**
  * Regular expression pattern for DynamoDB table name validation.
@@ -137,4 +139,43 @@ export function extractAccountIdFromDynamoDBArn(
     }
   }
   return undefined;
+}
+
+
+/**
+ * Parses a DynamoDB Table ARN into its components.
+ *
+ * @param value - The DynamoDB Table ARN to parse
+ * @returns Parsed DynamoDB Table ARN object, or null if invalid
+ *
+ * @example
+ * ```typescript
+ * parseDynamoDBTableArn('arn:aws:dynamodb:us-east-1:123456789012:table/MyTable');
+ * // {
+ * //   value: 'arn:aws:dynamodb:us-east-1:123456789012:table/MyTable',
+ * //   tableName: 'MyTable',
+ * //   region: 'us-east-1',
+ * //   accountId: '123456789012'
+ * // }
+ *
+ * parseDynamoDBTableArn('invalid');
+ * // null
+ * ```
+ */
+export function parseDynamoDBTableArn(value: string): ParsedDynamoDBTableArn | null {
+  if (!isValidDynamoDBTableArn(value)) return null;
+
+  const region = extractRegionFromDynamoDBArn(value);
+  const accountId = extractAccountIdFromDynamoDBArn(value);
+
+  // arn:aws:dynamodb:<region>:<account-id>:table/<table-name>
+  const match = value.match(/table\/([^/]+)$/);
+  if (!match || !region || !accountId) return null;
+
+  return {
+    value,
+    tableName: match[1],
+    region,
+    accountId,
+  };
 }

@@ -1,6 +1,8 @@
 /**
- * Secrets Manager validators.
+ * Secrets Manager validators and parsers.
  */
+
+import type { ParsedSecretsManagerArn } from './parsed-types';
 
 /**
  * Regular expression pattern for Secrets Manager ARN validation.
@@ -101,4 +103,51 @@ export function extractAccountIdFromSecretsManagerArn(
     }
   }
   return undefined;
+}
+
+
+/**
+ * Parses a Secrets Manager ARN into its components.
+ *
+ * @param value - The Secrets Manager ARN to parse
+ * @returns Parsed Secrets Manager ARN object, or null if invalid
+ *
+ * @example
+ * ```typescript
+ * parseSecretsManagerArn('arn:aws:secretsmanager:us-east-1:123456789012:secret:my-secret-AbCdEf');
+ * // {
+ * //   value: 'arn:aws:secretsmanager:us-east-1:123456789012:secret:my-secret-AbCdEf',
+ * //   secretName: 'my-secret',
+ * //   region: 'us-east-1',
+ * //   accountId: '123456789012'
+ * // }
+ *
+ * parseSecretsManagerArn('arn:aws:secretsmanager:us-east-1:123456789012:secret:prod/db/password-123456');
+ * // {
+ * //   value: 'arn:aws:secretsmanager:us-east-1:123456789012:secret:prod/db/password-123456',
+ * //   secretName: 'prod/db/password',
+ * //   region: 'us-east-1',
+ * //   accountId: '123456789012'
+ * // }
+ *
+ * parseSecretsManagerArn('invalid');
+ * // null
+ * ```
+ */
+export function parseSecretsManagerArn(value: string): ParsedSecretsManagerArn | null {
+  if (!isValidSecretsManagerArn(value)) return null;
+
+  const region = extractRegionFromSecretsManagerArn(value);
+  const accountId = extractAccountIdFromSecretsManagerArn(value);
+
+  // arn:aws:secretsmanager:<region>:<account-id>:secret:<secret-name>-<random>
+  const match = value.match(/secret:(.*)-[A-Za-z0-9]{6}$/);
+  if (!match || !region || !accountId) return null;
+
+  return {
+    value,
+    secretName: match[1],
+    region,
+    accountId,
+  };
 }

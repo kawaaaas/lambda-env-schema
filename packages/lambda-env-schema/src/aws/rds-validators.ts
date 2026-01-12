@@ -1,6 +1,8 @@
 /**
- * RDS (Relational Database Service) validators.
+ * RDS (Relational Database Service) validators and parsers.
  */
+
+import type { ParsedRDSEndpoint } from './parsed-types';
 
 /**
  * Regular expression pattern for RDS endpoint validation.
@@ -128,4 +130,75 @@ export function isValidRDSClusterId(value: string): boolean {
   }
 
   return true;
+}
+
+
+/**
+ * Parses an RDS Endpoint into its components.
+ *
+ * Supports both formats:
+ * - Without port: <db-identifier>.<random-id>.<region>.rds.amazonaws.com
+ * - With port: <db-identifier>.<random-id>.<region>.rds.amazonaws.com:<port>
+ *
+ * @param value - The RDS Endpoint to parse
+ * @returns Parsed RDS Endpoint object, or null if invalid
+ *
+ * @example
+ * ```typescript
+ * parseRDSEndpoint('mydb.abc123xyz.us-east-1.rds.amazonaws.com');
+ * // {
+ * //   value: 'mydb.abc123xyz.us-east-1.rds.amazonaws.com',
+ * //   hostname: 'mydb.abc123xyz.us-east-1.rds.amazonaws.com',
+ * //   port: undefined,
+ * //   socketAddress: 'mydb.abc123xyz.us-east-1.rds.amazonaws.com:5432',
+ * //   region: 'us-east-1'
+ * // }
+ *
+ * parseRDSEndpoint('mydb.abc123xyz.us-east-1.rds.amazonaws.com:3306');
+ * // {
+ * //   value: 'mydb.abc123xyz.us-east-1.rds.amazonaws.com:3306',
+ * //   hostname: 'mydb.abc123xyz.us-east-1.rds.amazonaws.com',
+ * //   port: 3306,
+ * //   socketAddress: 'mydb.abc123xyz.us-east-1.rds.amazonaws.com:3306',
+ * //   region: 'us-east-1'
+ * // }
+ *
+ * parseRDSEndpoint('invalid');
+ * // null
+ * ```
+ */
+export function parseRDSEndpoint(value: string): ParsedRDSEndpoint | null {
+  // Split hostname and port
+  const colonIndex = value.lastIndexOf(':');
+  let hostname: string;
+  let portStr: string | undefined;
+
+  // Check if there's a port (colon followed by digits at the end)
+  if (colonIndex !== -1) {
+    const potentialPort = value.slice(colonIndex + 1);
+    if (/^\d+$/.test(potentialPort)) {
+      hostname = value.slice(0, colonIndex);
+      portStr = potentialPort;
+    } else {
+      hostname = value;
+    }
+  } else {
+    hostname = value;
+  }
+
+  if (!isValidRDSEndpoint(hostname)) return null;
+
+  const region = extractRegionFromRDSEndpoint(hostname);
+  if (!region) return null;
+
+  const port = portStr ? Number.parseInt(portStr, 10) : undefined;
+  const socketAddress = port ? `${hostname}:${port}` : `${hostname}:5432`;
+
+  return {
+    value,
+    hostname,
+    port,
+    socketAddress,
+    region,
+  };
 }

@@ -1,6 +1,8 @@
 /**
- * KMS (Key Management Service) validators.
+ * KMS (Key Management Service) validators and parsers.
  */
+
+import type { ParsedKMSKeyArn } from './parsed-types';
 
 /**
  * Regular expression pattern for KMS Key ID validation (UUID format).
@@ -123,4 +125,43 @@ export function extractAccountIdFromKMSKeyArn(
     }
   }
   return undefined;
+}
+
+
+/**
+ * Parses a KMS Key ARN into its components.
+ *
+ * @param value - The KMS Key ARN to parse
+ * @returns Parsed KMS Key ARN object, or null if invalid
+ *
+ * @example
+ * ```typescript
+ * parseKMSKeyArn('arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012');
+ * // {
+ * //   value: 'arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012',
+ * //   keyId: '12345678-1234-1234-1234-123456789012',
+ * //   region: 'us-east-1',
+ * //   accountId: '123456789012'
+ * // }
+ *
+ * parseKMSKeyArn('invalid');
+ * // null
+ * ```
+ */
+export function parseKMSKeyArn(value: string): ParsedKMSKeyArn | null {
+  if (!isValidKMSKeyArn(value)) return null;
+
+  const region = extractRegionFromKMSKeyArn(value);
+  const accountId = extractAccountIdFromKMSKeyArn(value);
+
+  // arn:aws:kms:<region>:<account-id>:key/<key-id>
+  const match = value.match(/key\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i);
+  if (!match || !region || !accountId) return null;
+
+  return {
+    value,
+    keyId: match[1],
+    region,
+    accountId,
+  };
 }
