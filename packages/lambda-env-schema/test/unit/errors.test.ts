@@ -123,3 +123,85 @@ describe('EnvironmentValidationError', () => {
     expect(error.errors[0].expected).toBe('number');
   });
 });
+
+import {
+  AWS_VALIDATION_DESCRIPTIONS,
+  formatAWSValidationError,
+} from '../../src/core/validation';
+
+describe('formatAWSValidationError', () => {
+  it('includes validation type name in the message', () => {
+    const error = formatAWSValidationError(
+      'AWS_REGION',
+      'aws-region',
+      'invalid-region',
+      false
+    );
+
+    expect(error.message).toContain('aws-region');
+    expect(error.key).toBe('AWS_REGION');
+  });
+
+  it('includes expected format description in the message', () => {
+    const error = formatAWSValidationError(
+      'BUCKET_NAME',
+      's3-bucket-name',
+      'Invalid_Bucket',
+      false
+    );
+
+    expect(error.message).toContain(
+      AWS_VALIDATION_DESCRIPTIONS['s3-bucket-name']
+    );
+    expect(error.expected).toBe(AWS_VALIDATION_DESCRIPTIONS['s3-bucket-name']);
+  });
+
+  it('masks secret values with ***', () => {
+    const error = formatAWSValidationError(
+      'SECRET_KEY',
+      'secret-access-key',
+      'my-secret-value',
+      true
+    );
+
+    expect(error.message).toContain('***');
+    expect(error.message).not.toContain('my-secret-value');
+    expect(error.received).toBe('***');
+  });
+
+  it('shows actual value for non-secret values', () => {
+    const error = formatAWSValidationError(
+      'VPC_ID',
+      'vpc-id',
+      'invalid-vpc',
+      false
+    );
+
+    expect(error.message).toContain('"invalid-vpc"');
+    expect(error.received).toBe('invalid-vpc');
+  });
+
+  it('formats aws-region error with valid region examples', () => {
+    const error = formatAWSValidationError(
+      'REGION',
+      'aws-region',
+      'us-invalid-1',
+      false
+    );
+
+    expect(error.message).toContain('Invalid aws-region');
+    expect(error.message).toContain('Must be a valid AWS region');
+  });
+
+  it('formats dynamodb-table-arn error with ARN format', () => {
+    const error = formatAWSValidationError(
+      'TABLE_ARN',
+      'dynamodb-table-arn',
+      'invalid-arn',
+      false
+    );
+
+    expect(error.message).toContain('Invalid dynamodb-table-arn');
+    expect(error.message).toContain('arn:aws:dynamodb');
+  });
+});

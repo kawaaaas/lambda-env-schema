@@ -122,6 +122,8 @@ export type AWSValidationType =
   | 'aws-account-id'
   | 'iam-role-arn'
   | 'iam-user-arn'
+  | 'access-key-id'
+  | 'secret-access-key'
   // Storage
   | 's3-bucket-name'
   | 's3-arn'

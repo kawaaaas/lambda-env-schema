@@ -15,6 +15,7 @@ import {
 } from './coercion';
 import {
   applyDefault,
+  checkAWSValidation,
   checkConstraints,
   checkEnum,
   checkRequired,
@@ -222,6 +223,24 @@ function validateItem(
   const constraintResult = checkConstraints(key, schema, coercedValue);
   if (!constraintResult.valid) {
     errors.push(...constraintResult.errors);
+  }
+
+  // Step 6: Check AWS validation (only for string schemas with validation option)
+  if (
+    schema.type === 'string' &&
+    schema.validation &&
+    typeof coercedValue === 'string'
+  ) {
+    const awsResult = checkAWSValidation(
+      key,
+      coercedValue,
+      schema.validation,
+      schema.scope,
+      isSecret
+    );
+    if (!awsResult.valid) {
+      errors.push(...awsResult.errors);
+    }
   }
 
   if (errors.length > 0) {

@@ -2,6 +2,39 @@
  * Validation functions for environment variable schema validation.
  */
 
+import type {
+  AWSValidationType,
+  ValidationScope,
+} from '../aws/aws-validation-types';
+import {
+  AWS_REGIONS,
+  isValidApiGatewayId,
+  isValidAWSAccountId,
+  isValidAWSRegion,
+  isValidCloudFrontDistId,
+  isValidDynamoDBTableArn,
+  isValidDynamoDBTableName,
+  isValidEc2InstanceId,
+  isValidEventBusName,
+  isValidIAMRoleArn,
+  isValidIAMUserArn,
+  isValidKMSKeyArn,
+  isValidKMSKeyId,
+  isValidLambdaFunctionName,
+  isValidRDSClusterId,
+  isValidRDSEndpoint,
+  isValidS3Arn,
+  isValidS3BucketName,
+  isValidSecretsManagerArn,
+  isValidSecurityGroupId,
+  isValidSNSTopicArn,
+  isValidSQSQueueArn,
+  isValidSQSQueueUrl,
+  isValidSSMParameterName,
+  isValidSubnetId,
+  isValidVpcId,
+  validateScope,
+} from '../aws/aws-validation-types';
 import type { ValidationError } from '../share/errors';
 import type { SchemaItem } from '../share/types';
 
@@ -339,6 +372,248 @@ export function checkConstraints(
 
   if (errors.length > 0) {
     return { valid: false, errors };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Descriptions for AWS validation types used in error messages.
+ */
+export const AWS_VALIDATION_DESCRIPTIONS: Record<AWSValidationType, string> = {
+  'aws-region': `Must be a valid AWS region (e.g., ${AWS_REGIONS.slice(0, 3).join(', ')})`,
+  'aws-account-id': 'Must be exactly 12 digits',
+  'iam-role-arn':
+    'Must be a valid IAM Role ARN (arn:aws:iam::<account-id>:role/<role-name>)',
+  'iam-user-arn':
+    'Must be a valid IAM User ARN (arn:aws:iam::<account-id>:user/<user-name>)',
+  'access-key-id': 'Must start with AKIA or ASIA and be exactly 20 characters',
+  'secret-access-key':
+    'Must be exactly 40 characters containing alphanumeric, +, /, and =',
+  's3-bucket-name': 'Must be 3-63 lowercase letters, numbers, and hyphens',
+  's3-arn':
+    'Must be a valid S3 ARN (arn:aws:s3:::<bucket-name>[/<object-key>])',
+  'dynamodb-table-name':
+    'Must be 3-255 characters containing alphanumeric, _, -, and .',
+  'dynamodb-table-arn':
+    'Must be a valid DynamoDB table ARN (arn:aws:dynamodb:<region>:<account-id>:table/<table-name>)',
+  'rds-endpoint':
+    'Must be a valid RDS endpoint (<identifier>.<random>.<region>.rds.amazonaws.com)',
+  'rds-cluster-id':
+    'Must be 1-63 characters, start with a letter, contain alphanumeric and hyphens',
+  'lambda-function-name':
+    'Must be 1-64 characters containing alphanumeric, -, and _',
+  'sqs-queue-url':
+    'Must be a valid SQS queue URL (https://sqs.<region>.amazonaws.com/<account-id>/<queue-name>)',
+  'sqs-queue-arn':
+    'Must be a valid SQS queue ARN (arn:aws:sqs:<region>:<account-id>:<queue-name>)',
+  'sns-topic-arn':
+    'Must be a valid SNS topic ARN (arn:aws:sns:<region>:<account-id>:<topic-name>)',
+  'event-bus-name':
+    'Must be "default" or 1-256 characters containing alphanumeric, -, _, ., and /',
+  'api-gateway-id': 'Must be exactly 10 lowercase alphanumeric characters',
+  'vpc-id': 'Must be vpc- followed by 8 or 17 hexadecimal characters',
+  'subnet-id': 'Must be subnet- followed by 8 or 17 hexadecimal characters',
+  'security-group-id': 'Must be sg- followed by 8 or 17 hexadecimal characters',
+  'ec2-instance-id': 'Must be i- followed by 8 or 17 hexadecimal characters',
+  'cloudfront-dist-id': 'Must be 13-14 uppercase alphanumeric characters',
+  'kms-key-id': 'Must be a valid UUID (8-4-4-4-12 hexadecimal)',
+  'kms-key-arn':
+    'Must be a valid KMS Key ARN (arn:aws:kms:<region>:<account-id>:key/<key-id>)',
+  'secrets-manager-arn':
+    'Must be a valid Secrets Manager ARN (arn:aws:secretsmanager:<region>:<account-id>:secret:<name>-<random>)',
+  'ssm-parameter-name':
+    'Must start with / and contain alphanumeric, -, _, ., and /',
+};
+
+/**
+ * Formats an AWS validation error message.
+ *
+ * Creates a standardized error object for AWS validation failures that includes:
+ * - The validation type name (e.g., "aws-region", "s3-bucket-name")
+ * - A description of the expected format
+ * - The received value (masked if secret)
+ *
+ * @param key - The environment variable name
+ * @param validationType - The AWS validation type that failed
+ * @param value - The invalid value
+ * @param isSecret - Whether the value should be masked in error messages
+ * @returns A ValidationError object with formatted message
+ *
+ * @example
+ * ```typescript
+ * // Non-secret value
+ * formatAWSValidationError('AWS_REGION', 'aws-region', 'invalid-region', false);
+ * // {
+ * //   key: 'AWS_REGION',
+ * //   message: 'Invalid aws-region: "invalid-region". Must be a valid AWS region (e.g., ap-northeast-1, ap-northeast-2, ap-northeast-3)',
+ * //   expected: 'Must be a valid AWS region (e.g., ap-northeast-1, ap-northeast-2, ap-northeast-3)',
+ * //   received: 'invalid-region'
+ * // }
+ *
+ * // Secret value - masked
+ * formatAWSValidationError('SECRET_KEY', 'secret-access-key', 'invalid', true);
+ * // {
+ * //   key: 'SECRET_KEY',
+ * //   message: 'Invalid secret-access-key: ***. Must be exactly 40 characters containing alphanumeric, +, /, and =',
+ * //   expected: 'Must be exactly 40 characters containing alphanumeric, +, /, and =',
+ * //   received: '***'
+ * // }
+ * ```
+ */
+export function formatAWSValidationError(
+  key: string,
+  validationType: AWSValidationType,
+  value: string,
+  isSecret: boolean
+): ValidationError {
+  const displayValue = isSecret ? '***' : `"${value}"`;
+  const description = AWS_VALIDATION_DESCRIPTIONS[validationType];
+
+  return {
+    key,
+    message: `Invalid ${validationType}: ${displayValue}. ${description}`,
+    expected: description,
+    received: isSecret ? '***' : value,
+  };
+}
+
+/**
+ * Validates a value against an AWS validation type.
+ *
+ * @param value - The value to validate
+ * @param validationType - The AWS validation type to use
+ * @returns true if the value is valid, false otherwise
+ */
+function validateAWSType(
+  value: string,
+  validationType: AWSValidationType
+): boolean {
+  switch (validationType) {
+    case 'aws-region':
+      return isValidAWSRegion(value);
+    case 'aws-account-id':
+      return isValidAWSAccountId(value);
+    case 'iam-role-arn':
+      return isValidIAMRoleArn(value);
+    case 'iam-user-arn':
+      return isValidIAMUserArn(value);
+    case 'access-key-id':
+      return /^(AKIA|ASIA)[A-Z0-9]{16}$/.test(value);
+    case 'secret-access-key':
+      return /^[A-Za-z0-9+/=]{40}$/.test(value);
+    case 's3-bucket-name':
+      return isValidS3BucketName(value);
+    case 's3-arn':
+      return isValidS3Arn(value);
+    case 'dynamodb-table-name':
+      return isValidDynamoDBTableName(value);
+    case 'dynamodb-table-arn':
+      return isValidDynamoDBTableArn(value);
+    case 'rds-endpoint':
+      return isValidRDSEndpoint(value);
+    case 'rds-cluster-id':
+      return isValidRDSClusterId(value);
+    case 'lambda-function-name':
+      return isValidLambdaFunctionName(value);
+    case 'sqs-queue-url':
+      return isValidSQSQueueUrl(value);
+    case 'sqs-queue-arn':
+      return isValidSQSQueueArn(value);
+    case 'sns-topic-arn':
+      return isValidSNSTopicArn(value);
+    case 'event-bus-name':
+      return isValidEventBusName(value);
+    case 'api-gateway-id':
+      return isValidApiGatewayId(value);
+    case 'vpc-id':
+      return isValidVpcId(value);
+    case 'subnet-id':
+      return isValidSubnetId(value);
+    case 'security-group-id':
+      return isValidSecurityGroupId(value);
+    case 'ec2-instance-id':
+      return isValidEc2InstanceId(value);
+    case 'cloudfront-dist-id':
+      return isValidCloudFrontDistId(value);
+    case 'kms-key-id':
+      return isValidKMSKeyId(value);
+    case 'kms-key-arn':
+      return isValidKMSKeyArn(value);
+    case 'secrets-manager-arn':
+      return isValidSecretsManagerArn(value);
+    case 'ssm-parameter-name':
+      return isValidSSMParameterName(value);
+    default:
+      return true;
+  }
+}
+
+/**
+ * Result of checking AWS validation on a value.
+ */
+export type AWSValidationCheckResult =
+  | { valid: true }
+  | { valid: false; errors: ValidationError[] };
+
+/**
+ * Checks if a value passes AWS-specific validation.
+ *
+ * This function validates the value against the specified AWS validation type
+ * and optionally checks scope (region/accountId) for ARN-based types.
+ *
+ * @param key - The environment variable name
+ * @param value - The value to validate
+ * @param validationType - The AWS validation type
+ * @param scope - Optional scope configuration for ARN validation
+ * @param isSecret - Whether the value should be masked in error messages
+ * @returns AWSValidationCheckResult indicating if the check passed
+ *
+ * @example
+ * ```typescript
+ * // Valid AWS region
+ * checkAWSValidation('AWS_REGION', 'us-east-1', 'aws-region');
+ * // { valid: true }
+ *
+ * // Invalid AWS region
+ * checkAWSValidation('AWS_REGION', 'invalid-region', 'aws-region');
+ * // { valid: false, errors: [{ key: 'AWS_REGION', message: 'Invalid aws-region: ...' }] }
+ *
+ * // Valid DynamoDB ARN with scope check
+ * checkAWSValidation(
+ *   'TABLE_ARN',
+ *   'arn:aws:dynamodb:us-east-1:123456789012:table/MyTable',
+ *   'dynamodb-table-arn',
+ *   { region: 'us-east-1' }
+ * );
+ * // { valid: true }
+ * ```
+ */
+export function checkAWSValidation(
+  key: string,
+  value: string,
+  validationType: AWSValidationType,
+  scope?: ValidationScope,
+  isSecret?: boolean
+): AWSValidationCheckResult {
+  const errors: ValidationError[] = [];
+
+  // Step 1: Validate the format
+  const isValid = validateAWSType(value, validationType);
+  if (!isValid) {
+    errors.push(
+      formatAWSValidationError(key, validationType, value, isSecret ?? false)
+    );
+    return { valid: false, errors };
+  }
+
+  // Step 2: Validate scope if provided
+  if (scope) {
+    const scopeResult = validateScope(key, value, validationType, scope);
+    if (!scopeResult.valid) {
+      errors.push(...scopeResult.errors);
+      return { valid: false, errors };
+    }
   }
 
   return { valid: true };
