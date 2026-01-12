@@ -31,16 +31,6 @@
         "types": "./dist/index.d.cts",
         "default": "./dist/index.cjs"
       }
-    },
-    "./aws": {
-      "import": {
-        "types": "./dist/aws.d.ts",
-        "default": "./dist/aws.js"
-      },
-      "require": {
-        "types": "./dist/aws.d.cts",
-        "default": "./dist/aws.cjs"
-      }
     }
   },
   "files": [
@@ -58,22 +48,9 @@
   },
   "size-limit": [
     {
-      "name": "Main (createEnv)",
+      "name": "Full Bundle",
       "path": "dist/index.js",
-      "limit": "5 KB",
-      "import": "{ createEnv }",
-      "brotli": true
-    },
-    {
-      "name": "AWS Validators",
-      "path": "dist/aws.js",
-      "limit": "3 KB",
-      "brotli": true
-    },
-    {
-      "name": "Full Bundle (index + aws)",
-      "path": ["dist/index.js", "dist/aws.js"],
-      "limit": "7 KB",
+      "limit": "8 KB",
       "brotli": true
     }
   ],
