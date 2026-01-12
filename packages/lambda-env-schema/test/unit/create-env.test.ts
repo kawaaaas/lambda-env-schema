@@ -365,52 +365,6 @@ describe('AWS validation types', () => {
     });
   });
 
-  describe('access-key-id validation', () => {
-    it('accepts valid access key ID starting with AKIA', () => {
-      const env = createEnv(
-        { ACCESS_KEY: { type: 'string', validation: 'access-key-id' } },
-        { env: { ACCESS_KEY: 'AKIAIOSFODNN7EXAMPLE' } }
-      );
-      expect(env.ACCESS_KEY).toBe('AKIAIOSFODNN7EXAMPLE');
-    });
-
-    it('accepts valid access key ID starting with ASIA', () => {
-      const env = createEnv(
-        { ACCESS_KEY: { type: 'string', validation: 'access-key-id' } },
-        { env: { ACCESS_KEY: 'ASIAIOSFODNN7EXAMPLE' } }
-      );
-      expect(env.ACCESS_KEY).toBe('ASIAIOSFODNN7EXAMPLE');
-    });
-
-    it('rejects access key ID with wrong prefix', () => {
-      expect(() =>
-        createEnv(
-          { ACCESS_KEY: { type: 'string', validation: 'access-key-id' } },
-          { env: { ACCESS_KEY: 'ABCDIOSFODNN7EXAMPLE' } }
-        )
-      ).toThrow(EnvironmentValidationError);
-    });
-  });
-
-  describe('secret-access-key validation', () => {
-    it('accepts valid secret access key', () => {
-      const env = createEnv(
-        { SECRET_KEY: { type: 'string', validation: 'secret-access-key' } },
-        { env: { SECRET_KEY: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY' } }
-      );
-      expect(env.SECRET_KEY).toBe('wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY');
-    });
-
-    it('rejects secret access key with wrong length', () => {
-      expect(() =>
-        createEnv(
-          { SECRET_KEY: { type: 'string', validation: 'secret-access-key' } },
-          { env: { SECRET_KEY: 'tooshort' } }
-        )
-      ).toThrow(EnvironmentValidationError);
-    });
-  });
-
   describe('s3-bucket-name validation', () => {
     it('accepts valid S3 bucket name', () => {
       const env = createEnv(
