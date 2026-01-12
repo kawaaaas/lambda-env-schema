@@ -79,6 +79,203 @@ export function isValidAWSRegion(value: string): value is AWSRegion {
 }
 
 /**
+ * Regular expression pattern for AWS Account ID validation.
+ * AWS Account IDs are exactly 12 digits.
+ */
+const AWS_ACCOUNT_ID_PATTERN = /^\d{12}$/;
+
+/**
+ * Regular expression pattern for IAM Role ARN validation.
+ * Format: arn:aws:iam::<account-id>:role/<role-name>
+ * Role name: 1-64 characters, alphanumeric plus +=,.@_-
+ */
+const IAM_ROLE_ARN_PATTERN = /^arn:aws:iam::\d{12}:role\/[\w+=,.@-]{1,64}$/;
+
+/**
+ * Regular expression pattern for IAM User ARN validation.
+ * Format: arn:aws:iam::<account-id>:user/<user-name>
+ * User name: alphanumeric plus +=,.@_-
+ */
+const IAM_USER_ARN_PATTERN = /^arn:aws:iam::\d{12}:user\/[\w+=,.@-]+$/;
+
+/**
+ * Checks if a value is a valid AWS Account ID.
+ *
+ * AWS Account IDs must be exactly 12 digits (0-9).
+ *
+ * @param value - The value to validate
+ * @returns true if the value is a valid AWS Account ID, false otherwise
+ *
+ * @example
+ * ```typescript
+ * isValidAWSAccountId('123456789012'); // true
+ * isValidAWSAccountId('000000000000'); // true
+ * isValidAWSAccountId('12345678901');  // false (11 digits)
+ * isValidAWSAccountId('1234567890123'); // false (13 digits)
+ * isValidAWSAccountId('12345678901a'); // false (contains non-digit)
+ * isValidAWSAccountId('');             // false
+ * ```
+ */
+export function isValidAWSAccountId(value: string): boolean {
+  return AWS_ACCOUNT_ID_PATTERN.test(value);
+}
+
+/**
+ * Checks if a value is a valid IAM Role ARN.
+ *
+ * IAM Role ARNs follow the format: arn:aws:iam::<account-id>:role/<role-name>
+ * - Account ID: exactly 12 digits
+ * - Role name: 1-64 characters, alphanumeric plus +=,.@_-
+ *
+ * @param value - The value to validate
+ * @returns true if the value is a valid IAM Role ARN, false otherwise
+ *
+ * @example
+ * ```typescript
+ * isValidIAMRoleArn('arn:aws:iam::123456789012:role/MyRole'); // true
+ * isValidIAMRoleArn('arn:aws:iam::123456789012:role/my-role_name'); // true
+ * isValidIAMRoleArn('arn:aws:iam::123456789012:user/MyUser'); // false (wrong type)
+ * isValidIAMRoleArn('invalid'); // false
+ * ```
+ */
+export function isValidIAMRoleArn(value: string): boolean {
+  return IAM_ROLE_ARN_PATTERN.test(value);
+}
+
+/**
+ * Checks if a value is a valid IAM User ARN.
+ *
+ * IAM User ARNs follow the format: arn:aws:iam::<account-id>:user/<user-name>
+ * - Account ID: exactly 12 digits
+ * - User name: alphanumeric plus +=,.@_-
+ *
+ * @param value - The value to validate
+ * @returns true if the value is a valid IAM User ARN, false otherwise
+ *
+ * @example
+ * ```typescript
+ * isValidIAMUserArn('arn:aws:iam::123456789012:user/MyUser'); // true
+ * isValidIAMUserArn('arn:aws:iam::123456789012:user/my-user_name'); // true
+ * isValidIAMUserArn('arn:aws:iam::123456789012:role/MyRole'); // false (wrong type)
+ * isValidIAMUserArn('invalid'); // false
+ * ```
+ */
+export function isValidIAMUserArn(value: string): boolean {
+  return IAM_USER_ARN_PATTERN.test(value);
+}
+
+/**
+ * Extracts the AWS account ID from an IAM ARN.
+ *
+ * Works with both IAM Role ARNs and IAM User ARNs.
+ * Returns undefined if the ARN format is invalid.
+ *
+ * @param value - The IAM ARN to extract account ID from
+ * @returns The 12-digit account ID, or undefined if extraction fails
+ *
+ * @example
+ * ```typescript
+ * extractAccountIdFromIAMArn('arn:aws:iam::123456789012:role/MyRole'); // '123456789012'
+ * extractAccountIdFromIAMArn('arn:aws:iam::123456789012:user/MyUser'); // '123456789012'
+ * extractAccountIdFromIAMArn('invalid'); // undefined
+ * ```
+ */
+export function extractAccountIdFromIAMArn(value: string): string | undefined {
+  // IAM ARN format: arn:aws:iam::<account-id>:role/<name> or arn:aws:iam::<account-id>:user/<name>
+  const parts = value.split(':');
+  if (parts.length >= 5 && parts[0] === 'arn' && parts[1] === 'aws' && parts[2] === 'iam') {
+    const accountId = parts[4];
+    if (AWS_ACCOUNT_ID_PATTERN.test(accountId)) {
+      return accountId;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Extracts the AWS region from an IAM ARN.
+ *
+ * IAM is a global service, so IAM ARNs do not contain a region.
+ * This function always returns undefined for IAM ARNs.
+ *
+ * @param _value - The IAM ARN (unused, as IAM ARNs have no region)
+ * @returns Always undefined, as IAM is a global service
+ *
+ * @example
+ * ```typescript
+ * extractRegionFromIAMArn('arn:aws:iam::123456789012:role/MyRole'); // undefined
+ * extractRegionFromIAMArn('arn:aws:iam::123456789012:user/MyUser'); // undefined
+ * ```
+ */
+export function extractRegionFromIAMArn(_value: string): string | undefined {
+  // IAM is a global service, so IAM ARNs do not contain a region
+  // The region field in IAM ARNs is always empty: arn:aws:iam::<account-id>:...
+  return undefined;
+}
+
+/**
+ * Regular expression pattern for AWS Access Key ID validation.
+ * Format: Starts with "AKIA" (long-term) or "ASIA" (temporary), followed by 16 uppercase alphanumeric characters.
+ * Total length: exactly 20 characters.
+ */
+const ACCESS_KEY_ID_PATTERN = /^(AKIA|ASIA)[A-Z0-9]{16}$/;
+
+/**
+ * Regular expression pattern for AWS Secret Access Key validation.
+ * Format: Exactly 40 characters containing alphanumeric characters, plus (+), forward slash (/), and equals (=).
+ */
+const SECRET_ACCESS_KEY_PATTERN = /^[A-Za-z0-9+/=]{40}$/;
+
+/**
+ * Checks if a value is a valid AWS Access Key ID.
+ *
+ * AWS Access Key IDs must:
+ * - Start with "AKIA" (long-term credentials) or "ASIA" (temporary credentials from STS)
+ * - Be exactly 20 characters in total
+ * - Contain only uppercase letters and digits after the prefix
+ *
+ * @param value - The value to validate
+ * @returns true if the value is a valid AWS Access Key ID, false otherwise
+ *
+ * @example
+ * ```typescript
+ * isValidAccessKeyId('AKIAIOSFODNN7EXAMPLE'); // true
+ * isValidAccessKeyId('ASIAJEXAMPLEEXAMPLE'); // true (temporary credentials)
+ * isValidAccessKeyId('AKIAIOSFODNN7EXAMPL'); // false (19 characters)
+ * isValidAccessKeyId('AKIAIOSFODNN7EXAMPLES'); // false (21 characters)
+ * isValidAccessKeyId('BKIAIOSFODNN7EXAMPLE'); // false (wrong prefix)
+ * isValidAccessKeyId('akiaiosfodnn7example'); // false (lowercase)
+ * ```
+ */
+export function isValidAccessKeyId(value: string): boolean {
+  return ACCESS_KEY_ID_PATTERN.test(value);
+}
+
+/**
+ * Checks if a value is a valid AWS Secret Access Key.
+ *
+ * AWS Secret Access Keys must:
+ * - Be exactly 40 characters in length
+ * - Contain only alphanumeric characters, plus (+), forward slash (/), and equals (=)
+ *
+ * @param value - The value to validate
+ * @returns true if the value is a valid AWS Secret Access Key, false otherwise
+ *
+ * @example
+ * ```typescript
+ * isValidSecretAccessKey('wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY'); // true
+ * isValidSecretAccessKey('abcdefghijklmnopqrstuvwxyz1234567890ABCD'); // true
+ * isValidSecretAccessKey('abc+def/ghi=jklmnopqrstuvwxyz1234567890A'); // true
+ * isValidSecretAccessKey('short'); // false (too short)
+ * isValidSecretAccessKey('wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEYX'); // false (41 characters)
+ * isValidSecretAccessKey('wJalrXUtnFEMI/K7MDENG/bPxRfiCY!XAMPLEKEY'); // false (invalid character !)
+ * ```
+ */
+export function isValidSecretAccessKey(value: string): boolean {
+  return SECRET_ACCESS_KEY_PATTERN.test(value);
+}
+
+/**
  * Scope configuration for ARN validation.
  *
  * When validating ARN values, you can optionally specify expected region and/or
