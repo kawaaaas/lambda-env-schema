@@ -46,7 +46,7 @@ export type { AWSLambdaEnv } from './aws/aws-env';
 // AWS Validation Types
 // =============================================================================
 
-export { AWS_REGIONS, extractAccountIdFromIAMArn, extractRegionFromIAMArn, isValidAccessKeyId, isValidAWSAccountId, isValidAWSRegion, isValidIAMRoleArn, isValidIAMUserArn, isValidSecretAccessKey } from './aws/aws-validation-types';
+export { AWS_REGIONS, extractAccountIdFromIAMArn, extractRegionFromIAMArn, isValidAccessKeyId, isValidAWSAccountId, isValidAWSRegion, isValidIAMRoleArn, isValidIAMUserArn, isValidS3Arn, isValidS3BucketName, isValidSecretAccessKey } from './aws/aws-validation-types';
 export type {
   AWSRegion,
   AWSValidationType,
