@@ -106,6 +106,11 @@ function isValidS3ArnBucketName(bucketName: string): boolean {
     return false;
   }
 
+  // Must not contain consecutive hyphens
+  if (bucketName.includes('--')) {
+    return false;
+  }
+
   // Must not be formatted as IP address
   if (IP_ADDRESS_PATTERN.test(bucketName)) {
     return false;
