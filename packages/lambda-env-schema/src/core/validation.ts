@@ -2,10 +2,7 @@
  * Validation functions for environment variable schema validation.
  */
 
-import type {
-  AWSValidationType,
-  ValidationScope,
-} from '../aws/aws-validation-types';
+import type { AWSValidationType } from '../aws/aws-validation-types';
 import {
   AWS_REGIONS,
   isValidApiGatewayId,
@@ -33,7 +30,6 @@ import {
   isValidSSMParameterName,
   isValidSubnetId,
   isValidVpcId,
-  validateScope,
 } from '../aws/aws-validation-types';
 import type { ValidationError } from '../share/errors';
 import type { SchemaItem } from '../share/types';
@@ -387,9 +383,6 @@ export const AWS_VALIDATION_DESCRIPTIONS: Record<AWSValidationType, string> = {
     'Must be a valid IAM Role ARN (arn:aws:iam::<account-id>:role/<role-name>)',
   'iam-user-arn':
     'Must be a valid IAM User ARN (arn:aws:iam::<account-id>:user/<user-name>)',
-  'access-key-id': 'Must start with AKIA or ASIA and be exactly 20 characters',
-  'secret-access-key':
-    'Must be exactly 40 characters containing alphanumeric, +, /, and =',
   's3-bucket-name': 'Must be 3-63 lowercase letters, numbers, and hyphens',
   's3-arn':
     'Must be a valid S3 ARN (arn:aws:s3:::<bucket-name>[/<object-key>])',
@@ -498,10 +491,6 @@ function validateAWSType(
       return isValidIAMRoleArn(value);
     case 'iam-user-arn':
       return isValidIAMUserArn(value);
-    case 'access-key-id':
-      return /^(AKIA|ASIA)[A-Z0-9]{16}$/.test(value);
-    case 'secret-access-key':
-      return /^[A-Za-z0-9+/=]{40}$/.test(value);
     case 's3-bucket-name':
       return isValidS3BucketName(value);
     case 's3-arn':
@@ -559,13 +548,11 @@ export type AWSValidationCheckResult =
 /**
  * Checks if a value passes AWS-specific validation.
  *
- * This function validates the value against the specified AWS validation type
- * and optionally checks scope (region/accountId) for ARN-based types.
+ * This function validates the value against the specified AWS validation type.
  *
  * @param key - The environment variable name
  * @param value - The value to validate
  * @param validationType - The AWS validation type
- * @param scope - Optional scope configuration for ARN validation
  * @param isSecret - Whether the value should be masked in error messages
  * @returns AWSValidationCheckResult indicating if the check passed
  *
@@ -578,42 +565,23 @@ export type AWSValidationCheckResult =
  * // Invalid AWS region
  * checkAWSValidation('AWS_REGION', 'invalid-region', 'aws-region');
  * // { valid: false, errors: [{ key: 'AWS_REGION', message: 'Invalid aws-region: ...' }] }
- *
- * // Valid DynamoDB ARN with scope check
- * checkAWSValidation(
- *   'TABLE_ARN',
- *   'arn:aws:dynamodb:us-east-1:123456789012:table/MyTable',
- *   'dynamodb-table-arn',
- *   { region: 'us-east-1' }
- * );
- * // { valid: true }
  * ```
  */
 export function checkAWSValidation(
   key: string,
   value: string,
   validationType: AWSValidationType,
-  scope?: ValidationScope,
   isSecret?: boolean
 ): AWSValidationCheckResult {
   const errors: ValidationError[] = [];
 
-  // Step 1: Validate the format
+  // Validate the format
   const isValid = validateAWSType(value, validationType);
   if (!isValid) {
     errors.push(
       formatAWSValidationError(key, validationType, value, isSecret ?? false)
     );
     return { valid: false, errors };
-  }
-
-  // Step 2: Validate scope if provided
-  if (scope) {
-    const scopeResult = validateScope(key, value, validationType, scope);
-    if (!scopeResult.valid) {
-      errors.push(...scopeResult.errors);
-      return { valid: false, errors };
-    }
   }
 
   return { valid: true };

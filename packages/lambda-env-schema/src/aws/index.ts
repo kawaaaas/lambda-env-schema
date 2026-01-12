@@ -31,8 +31,7 @@ export {
 
 export type {
     AWSValidationType,
-    ValidationRule,
-    ValidationScope
+    ValidationRule
 } from './aws-validation-types';
 
 // =============================================================================
@@ -119,15 +118,3 @@ export {
     isValidSubnetId,
     isValidVpcId
 } from './vpc-validators';
-
-// =============================================================================
-// Scoped Validation
-// =============================================================================
-
-export {
-    formatScopeError,
-    supportsScope,
-    validateScope
-} from './scoped-validation';
-export type { ScopeValidationResult } from './scoped-validation';
-

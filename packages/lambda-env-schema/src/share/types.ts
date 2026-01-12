@@ -1,7 +1,4 @@
-import type {
-  AWSValidationType,
-  ValidationScope,
-} from '../aws/aws-validation-types';
+import type { AWSValidationType } from '../aws/aws-validation-types';
 
 /**
  * Environment variable types supported by the schema.
@@ -37,8 +34,6 @@ export interface StringSchema<E extends string = string> extends BaseSchema {
   maxLength?: number;
   /** AWS-specific validation type */
   validation?: AWSValidationType;
-  /** Scope validation for ARNs (region/accountId) */
-  scope?: ValidationScope;
 }
 
 /**

@@ -235,7 +235,6 @@ function validateItem(
       key,
       coercedValue,
       schema.validation,
-      schema.scope,
       isSecret
     );
     if (!awsResult.valid) {

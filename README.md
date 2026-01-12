@@ -101,6 +101,10 @@ const env = createEnv({
   
   // JSON (auto-parsed)
   DATABASE_CONFIG: { type: 'json', required: true },
+  
+  // AWS-specific validation
+  QUEUE_ARN: { type: 'string', validation: 'sqs-queue-arn', required: true },
+  BUCKET_NAME: { type: 'string', validation: 's3-bucket-name', required: true },
 });
 
 // Type-safe access with auto-completion
@@ -109,6 +113,10 @@ console.log(env.API_KEY); // string
 console.log(env.DEBUG); // boolean
 console.log(env.ALLOWED_ORIGINS); // string[]
 console.log(env.DATABASE_CONFIG); // unknown
+
+// AWS-validated resources
+console.log(env.QUEUE_ARN); // string (validated SQS ARN format)
+console.log(env.BUCKET_NAME); // string (validated S3 bucket name)
 
 // Access AWS Lambda environment variables
 console.log(env.aws.region); // string | undefined
@@ -120,18 +128,36 @@ console.log(env.aws.functionName); // string | undefined
 ```typescript
 import { createEnv } from '@kawaaaas/lambda-env-schema';
 import type { APIGatewayProxyHandler } from 'aws-lambda';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { SQSClient } from '@aws-sdk/client-sqs';
 
 // Validate environment at module initialization (cold start)
 const env = createEnv({
-  TABLE_NAME: { type: 'string', required: true },
+  // DynamoDB table with ARN validation
+  TABLE_ARN: { type: 'string', validation: 'dynamodb-table-arn', required: true },
+  
+  // SQS queue with ARN validation
+  QUEUE_ARN: { type: 'string', validation: 'sqs-queue-arn', required: true },
+  
+  // S3 bucket with bucket name validation
+  BUCKET_NAME: { type: 'string', validation: 's3-bucket-name', required: true },
+  
+  // API key (marked as secret)
   API_KEY: { type: 'string', required: true, secret: true },
+  
+  // Debug flag
   DEBUG: { type: 'boolean', default: false },
 });
 
+// Initialize AWS clients with validated resources
+const dynamodb = new DynamoDBClient({ region: env.aws.region });
+const sqs = new SQSClient({ region: env.aws.region });
+
 export const handler: APIGatewayProxyHandler = async (event) => {
-  // Use validated environment variables
-  console.log('Table:', env.TABLE_NAME);
-  console.log('Debug mode:', env.DEBUG);
+  // Use validated AWS resources
+  console.log('Table ARN:', env.TABLE_ARN);
+  console.log('Queue ARN:', env.QUEUE_ARN);
+  console.log('Bucket:', env.BUCKET_NAME);
   console.log('Function:', env.aws.functionName);
   
   return {
@@ -253,25 +279,35 @@ const env = createEnv({
 
 ### AWS-Specific Validation
 
-Validate AWS resource identifiers:
+Validate AWS resource identifiers with 30+ built-in validators:
 
 ```typescript
 const env = createEnv({
-  // Validate ARN format
-  QUEUE_ARN: { 
-    type: 'string', 
-    validation: 'arn',
-    required: true
-  },
+  // Identity & Access
+  AWS_REGION: { type: 'string', validation: 'aws-region', required: true },
+  AWS_ACCOUNT_ID: { type: 'string', validation: 'aws-account-id', required: true },
+  ROLE_ARN: { type: 'string', validation: 'iam-role-arn', required: true },
   
-  // Validate S3 bucket name
-  BUCKET_NAME: { 
-    type: 'string', 
-    validation: 's3-bucket',
-    required: true
-  },
+  // Storage
+  BUCKET_NAME: { type: 'string', validation: 's3-bucket-name', required: true },
+  S3_ARN: { type: 'string', validation: 's3-arn', required: true },
+  
+  // Database
+  TABLE_NAME: { type: 'string', validation: 'dynamodb-table-name', required: true },
+  TABLE_ARN: { type: 'string', validation: 'dynamodb-table-arn', required: true },
+  
+  // Messaging
+  QUEUE_URL: { type: 'string', validation: 'sqs-queue-url', required: true },
+  QUEUE_ARN: { type: 'string', validation: 'sqs-queue-arn', required: true },
+  TOPIC_ARN: { type: 'string', validation: 'sns-topic-arn', required: true },
+  
+  // Security
+  KMS_KEY_ID: { type: 'string', validation: 'kms-key-id', required: true },
+  SECRET_ARN: { type: 'string', validation: 'secrets-manager-arn', required: true },
 });
 ```
+
+**Available validators:** `aws-region`, `aws-account-id`, `iam-role-arn`, `iam-user-arn`, `s3-bucket-name`, `s3-arn`, `dynamodb-table-name`, `dynamodb-table-arn`, `lambda-function-name`, `sqs-queue-url`, `sqs-queue-arn`, `sns-topic-arn`, `kms-key-id`, `kms-key-arn`, `secrets-manager-arn`, and more.
 
 ---
 
