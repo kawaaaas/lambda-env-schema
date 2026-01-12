@@ -2,12 +2,12 @@ import * as fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { AWS_REGIONS } from '../../../src/aws/aws-regions';
 import {
-    extractAccountIdFromSQSQueueArn,
-    extractAccountIdFromSQSQueueUrl,
-    extractRegionFromSQSQueueArn,
-    extractRegionFromSQSQueueUrl,
-    isValidSQSQueueArn,
-    isValidSQSQueueUrl,
+  extractAccountIdFromSQSQueueArn,
+  extractAccountIdFromSQSQueueUrl,
+  extractRegionFromSQSQueueArn,
+  extractRegionFromSQSQueueUrl,
+  isValidSQSQueueArn,
+  isValidSQSQueueUrl,
 } from '../../../src/aws/sqs-validators';
 
 // Character sets for generators

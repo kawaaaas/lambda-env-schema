@@ -73,9 +73,7 @@ describe('event-bus-name validation', () => {
           })
           .map(charArrayToString)
       )
-      .map(
-        ([before, invalidChar, after]) => `${before}${invalidChar}${after}`
-      )
+      .map(([before, invalidChar, after]) => `${before}${invalidChar}${after}`)
       .filter((name) => name.length >= 1 && name.length <= 256);
 
     fc.assert(

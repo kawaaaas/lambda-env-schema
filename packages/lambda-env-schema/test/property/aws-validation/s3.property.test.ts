@@ -1,6 +1,9 @@
 import * as fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { isValidS3Arn, isValidS3BucketName } from '../../../src/aws/s3-validators';
+import {
+  isValidS3Arn,
+  isValidS3BucketName,
+} from '../../../src/aws/s3-validators';
 
 // Character sets for generators
 const DIGITS = '0123456789'.split('');
@@ -205,10 +208,10 @@ describe('s3-bucket-name validation', () => {
   it('rejects bucket names with uppercase characters', () => {
     const UPPER_ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
     const uppercaseArb = fc
-      .array(
-        fc.constantFrom(...[...LOWER_ALPHA, ...UPPER_ALPHA, ...DIGITS]),
-        { minLength: 3, maxLength: 63 }
-      )
+      .array(fc.constantFrom(...[...LOWER_ALPHA, ...UPPER_ALPHA, ...DIGITS]), {
+        minLength: 3,
+        maxLength: 63,
+      })
       .map(charArrayToString)
       .filter((s) => /[A-Z]/.test(s));
 

@@ -77,7 +77,10 @@ describe('kms-key-id validation', () => {
         fc.array(fc.constantFrom(...HEX_LOWER), { minLength: 4, maxLength: 4 }),
         fc.array(fc.constantFrom(...HEX_LOWER), { minLength: 4, maxLength: 4 }),
         fc.array(fc.constantFrom(...HEX_LOWER), { minLength: 4, maxLength: 4 }),
-        fc.array(fc.constantFrom(...HEX_LOWER), { minLength: 12, maxLength: 12 })
+        fc.array(fc.constantFrom(...HEX_LOWER), {
+          minLength: 12,
+          maxLength: 12,
+        })
       )
       .map(
         ([p1, p2, p3, p4, p5]) =>
@@ -183,7 +186,10 @@ describe('secrets-manager-arn validation', () => {
 
   // Generator for valid secret names (without the random suffix)
   const validSecretNameArb = fc
-    .array(fc.constantFrom(...SECRET_NAME_CHARS), { minLength: 1, maxLength: 50 })
+    .array(fc.constantFrom(...SECRET_NAME_CHARS), {
+      minLength: 1,
+      maxLength: 50,
+    })
     .map(charArrayToString);
 
   // Generator for valid 6-character alphanumeric random suffix
@@ -314,7 +320,10 @@ describe('ssm-parameter-name validation', () => {
 
   // Generator for valid SSM parameter names (starting with /)
   const validSSMParameterNameArb = fc
-    .array(fc.constantFrom(...SSM_PARAM_CHARS), { minLength: 1, maxLength: 100 })
+    .array(fc.constantFrom(...SSM_PARAM_CHARS), {
+      minLength: 1,
+      maxLength: 100,
+    })
     .map((chars) => `/${charArrayToString(chars)}`);
 
   it('accepts valid SSM parameter names', () => {
@@ -328,7 +337,10 @@ describe('ssm-parameter-name validation', () => {
 
   it('rejects parameter names not starting with /', () => {
     const noLeadingSlashArb = fc
-      .array(fc.constantFrom(...SSM_PARAM_CHARS), { minLength: 1, maxLength: 100 })
+      .array(fc.constantFrom(...SSM_PARAM_CHARS), {
+        minLength: 1,
+        maxLength: 100,
+      })
       .map(charArrayToString)
       .filter((s) => !s.startsWith('/'));
 
@@ -344,14 +356,22 @@ describe('ssm-parameter-name validation', () => {
     const invalidCharsArb = fc
       .tuple(
         fc
-          .array(fc.constantFrom(...SSM_PARAM_CHARS), { minLength: 1, maxLength: 50 })
+          .array(fc.constantFrom(...SSM_PARAM_CHARS), {
+            minLength: 1,
+            maxLength: 50,
+          })
           .map(charArrayToString),
         fc.constantFrom('@', '#', '$', '%', '&', '*', '!', ' ', '\\', '?'),
         fc
-          .array(fc.constantFrom(...SSM_PARAM_CHARS), { minLength: 1, maxLength: 50 })
+          .array(fc.constantFrom(...SSM_PARAM_CHARS), {
+            minLength: 1,
+            maxLength: 50,
+          })
           .map(charArrayToString)
       )
-      .map(([before, invalidChar, after]) => `/${before}${invalidChar}${after}`);
+      .map(
+        ([before, invalidChar, after]) => `/${before}${invalidChar}${after}`
+      );
 
     fc.assert(
       fc.property(invalidCharsArb, (paramName) => {

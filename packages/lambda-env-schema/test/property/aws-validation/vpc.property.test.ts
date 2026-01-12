@@ -1,10 +1,10 @@
 import * as fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import {
-    isValidEc2InstanceId,
-    isValidSecurityGroupId,
-    isValidSubnetId,
-    isValidVpcId,
+  isValidEc2InstanceId,
+  isValidSecurityGroupId,
+  isValidSubnetId,
+  isValidVpcId,
 } from '../../../src/aws/vpc-validators';
 
 // Character sets for generators
@@ -74,7 +74,7 @@ describe('vpc-id validation', () => {
 
   it('rejects IDs with uppercase hex characters', () => {
     const UPPER_HEX = 'ABCDEF'.split('');
-    
+
     const withUppercaseArb = fc
       .tuple(
         fc.array(fc.constantFrom(...HEX_CHARS), { minLength: 0, maxLength: 7 }),

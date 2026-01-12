@@ -2,10 +2,10 @@ import * as fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { AWS_REGIONS } from '../../../src/aws/aws-regions';
 import {
-    extractAccountIdFromDynamoDBArn,
-    extractRegionFromDynamoDBArn,
-    isValidDynamoDBTableArn,
-    isValidDynamoDBTableName,
+  extractAccountIdFromDynamoDBArn,
+  extractRegionFromDynamoDBArn,
+  isValidDynamoDBTableArn,
+  isValidDynamoDBTableName,
 } from '../../../src/aws/dynamodb-validators';
 
 // Character sets for generators
@@ -87,9 +87,7 @@ describe('dynamodb-table-name validation', () => {
           })
           .map(charArrayToString)
       )
-      .map(
-        ([before, invalidChar, after]) => `${before}${invalidChar}${after}`
-      )
+      .map(([before, invalidChar, after]) => `${before}${invalidChar}${after}`)
       .filter((name) => name.length >= 3 && name.length <= 255);
 
     fc.assert(

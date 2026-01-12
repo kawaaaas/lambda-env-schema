@@ -28,7 +28,10 @@ describe('api-gateway-id validation', () => {
   it('rejects IDs with wrong length', () => {
     // Generate IDs with length != 10
     const wrongLengthArb = fc
-      .array(fc.constantFrom(...LOWER_ALPHANUM), { minLength: 1, maxLength: 20 })
+      .array(fc.constantFrom(...LOWER_ALPHANUM), {
+        minLength: 1,
+        maxLength: 20,
+      })
       .map(charArrayToString)
       .filter((s) => s.length !== 10);
 
@@ -42,13 +45,19 @@ describe('api-gateway-id validation', () => {
 
   it('rejects IDs with uppercase characters', () => {
     const UPPER_ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-    
+
     // Generate IDs with at least one uppercase character
     const withUppercaseArb = fc
       .tuple(
-        fc.array(fc.constantFrom(...LOWER_ALPHANUM), { minLength: 0, maxLength: 9 }),
+        fc.array(fc.constantFrom(...LOWER_ALPHANUM), {
+          minLength: 0,
+          maxLength: 9,
+        }),
         fc.constantFrom(...UPPER_ALPHA),
-        fc.array(fc.constantFrom(...LOWER_ALPHANUM), { minLength: 0, maxLength: 9 })
+        fc.array(fc.constantFrom(...LOWER_ALPHANUM), {
+          minLength: 0,
+          maxLength: 9,
+        })
       )
       .map(([prefix, upper, suffix]) => {
         const combined = [...prefix, upper, ...suffix];
@@ -67,13 +76,19 @@ describe('api-gateway-id validation', () => {
 
   it('rejects IDs with special characters', () => {
     const SPECIAL_CHARS = ['-', '_', '.', '@', '#', '$', '%'];
-    
+
     // Generate IDs with at least one special character
     const withSpecialArb = fc
       .tuple(
-        fc.array(fc.constantFrom(...LOWER_ALPHANUM), { minLength: 0, maxLength: 9 }),
+        fc.array(fc.constantFrom(...LOWER_ALPHANUM), {
+          minLength: 0,
+          maxLength: 9,
+        }),
         fc.constantFrom(...SPECIAL_CHARS),
-        fc.array(fc.constantFrom(...LOWER_ALPHANUM), { minLength: 0, maxLength: 9 })
+        fc.array(fc.constantFrom(...LOWER_ALPHANUM), {
+          minLength: 0,
+          maxLength: 9,
+        })
       )
       .map(([prefix, special, suffix]) => {
         const combined = [...prefix, special, ...suffix];

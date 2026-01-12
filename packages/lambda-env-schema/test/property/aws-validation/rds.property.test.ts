@@ -2,9 +2,9 @@ import * as fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { AWS_REGIONS } from '../../../src/aws/aws-regions';
 import {
-    extractRegionFromRDSEndpoint,
-    isValidRDSClusterId,
-    isValidRDSEndpoint,
+  extractRegionFromRDSEndpoint,
+  isValidRDSClusterId,
+  isValidRDSEndpoint,
 } from '../../../src/aws/rds-validators';
 
 // Character sets for generators
@@ -27,9 +27,7 @@ describe('rds-endpoint validation', () => {
       maxLength: 30,
     })
     .map(charArrayToString)
-    .filter(
-      (s) => !s.startsWith('-') && !s.endsWith('-') && !s.includes('--')
-    );
+    .filter((s) => !s.startsWith('-') && !s.endsWith('-') && !s.includes('--'));
 
   // Generator for random ID portion
   const randomIdArb = fc

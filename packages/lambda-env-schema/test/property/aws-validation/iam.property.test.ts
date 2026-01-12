@@ -1,9 +1,9 @@
 import * as fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import {
-    extractAccountIdFromIAMArn,
-    isValidIAMRoleArn,
-    isValidIAMUserArn,
+  extractAccountIdFromIAMArn,
+  isValidIAMRoleArn,
+  isValidIAMUserArn,
 } from '../../../src/aws/iam-validators';
 
 // Character sets for generators

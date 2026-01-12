@@ -9,42 +9,54 @@
 // Re-export all validators
 export { isValidApiGatewayId } from './api-gateway-validators';
 export {
-  AWS_REGIONS, isValidAWSAccountId, isValidAWSRegion, type AWSRegion
+  AWS_REGIONS,
+  type AWSRegion,
+  isValidAWSAccountId,
+  isValidAWSRegion,
 } from './aws-regions';
 export { isValidCloudFrontDistId } from './cloudfront-validators';
 export {
   extractAccountIdFromDynamoDBArn,
   extractRegionFromDynamoDBArn,
   isValidDynamoDBTableArn,
-  isValidDynamoDBTableName
+  isValidDynamoDBTableName,
 } from './dynamodb-validators';
 export { isValidEventBusName } from './eventbridge-validators';
 export {
   extractAccountIdFromIAMArn,
   extractRegionFromIAMArn,
   isValidIAMRoleArn,
-  isValidIAMUserArn
+  isValidIAMUserArn,
 } from './iam-validators';
 export {
   extractAccountIdFromKMSKeyArn,
   extractRegionFromKMSKeyArn,
   isValidKMSKeyArn,
-  isValidKMSKeyId
+  isValidKMSKeyId,
 } from './kms-validators';
 export { isValidLambdaFunctionName } from './lambda-validators';
 export {
   extractRegionFromRDSEndpoint,
   isValidRDSClusterId,
-  isValidRDSEndpoint
+  isValidRDSEndpoint,
 } from './rds-validators';
 export { isValidS3Arn, isValidS3BucketName } from './s3-validators';
+export type { ScopeValidationResult } from './scoped-validation';
+// Scoped validation
+export {
+  formatScopeError,
+  supportsScope,
+  validateScope,
+} from './scoped-validation';
 export {
   extractAccountIdFromSecretsManagerArn,
   extractRegionFromSecretsManagerArn,
-  isValidSecretsManagerArn
+  isValidSecretsManagerArn,
 } from './secrets-manager-validators';
 export {
-  extractAccountIdFromSNSTopicArn, extractRegionFromSNSTopicArn, isValidSNSTopicArn
+  extractAccountIdFromSNSTopicArn,
+  extractRegionFromSNSTopicArn,
+  isValidSNSTopicArn,
 } from './sns-validators';
 export {
   extractAccountIdFromSQSQueueArn,
@@ -52,14 +64,14 @@ export {
   extractRegionFromSQSQueueArn,
   extractRegionFromSQSQueueUrl,
   isValidSQSQueueArn,
-  isValidSQSQueueUrl
+  isValidSQSQueueUrl,
 } from './sqs-validators';
 export { isValidSSMParameterName } from './ssm-validators';
 export {
   isValidEc2InstanceId,
   isValidSecurityGroupId,
   isValidSubnetId,
-  isValidVpcId
+  isValidVpcId,
 } from './vpc-validators';
 
 /**

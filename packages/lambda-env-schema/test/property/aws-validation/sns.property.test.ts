@@ -2,9 +2,9 @@ import * as fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { AWS_REGIONS } from '../../../src/aws/aws-regions';
 import {
-    extractAccountIdFromSNSTopicArn,
-    extractRegionFromSNSTopicArn,
-    isValidSNSTopicArn,
+  extractAccountIdFromSNSTopicArn,
+  extractRegionFromSNSTopicArn,
+  isValidSNSTopicArn,
 } from '../../../src/aws/sns-validators';
 
 // Character sets for generators

@@ -15,11 +15,17 @@ describe('cloudfront-dist-id validation', () => {
   const validCloudFrontDistIdArb = fc.oneof(
     // 13 characters
     fc
-      .array(fc.constantFrom(...UPPER_ALPHANUM), { minLength: 13, maxLength: 13 })
+      .array(fc.constantFrom(...UPPER_ALPHANUM), {
+        minLength: 13,
+        maxLength: 13,
+      })
       .map(charArrayToString),
     // 14 characters
     fc
-      .array(fc.constantFrom(...UPPER_ALPHANUM), { minLength: 14, maxLength: 14 })
+      .array(fc.constantFrom(...UPPER_ALPHANUM), {
+        minLength: 14,
+        maxLength: 14,
+      })
       .map(charArrayToString)
   );
 
@@ -35,7 +41,10 @@ describe('cloudfront-dist-id validation', () => {
   it('rejects IDs with wrong length', () => {
     // Generate IDs with length != 13 and != 14
     const wrongLengthArb = fc
-      .array(fc.constantFrom(...UPPER_ALPHANUM), { minLength: 1, maxLength: 20 })
+      .array(fc.constantFrom(...UPPER_ALPHANUM), {
+        minLength: 1,
+        maxLength: 20,
+      })
       .map(charArrayToString)
       .filter((s) => s.length !== 13 && s.length !== 14);
 
@@ -49,13 +58,19 @@ describe('cloudfront-dist-id validation', () => {
 
   it('rejects IDs with lowercase characters', () => {
     const LOWER_ALPHA = 'abcdefghijklmnopqrstuvwxyz'.split('');
-    
+
     // Generate IDs with at least one lowercase character
     const withLowercaseArb = fc
       .tuple(
-        fc.array(fc.constantFrom(...UPPER_ALPHANUM), { minLength: 0, maxLength: 12 }),
+        fc.array(fc.constantFrom(...UPPER_ALPHANUM), {
+          minLength: 0,
+          maxLength: 12,
+        }),
         fc.constantFrom(...LOWER_ALPHA),
-        fc.array(fc.constantFrom(...UPPER_ALPHANUM), { minLength: 0, maxLength: 12 })
+        fc.array(fc.constantFrom(...UPPER_ALPHANUM), {
+          minLength: 0,
+          maxLength: 12,
+        })
       )
       .map(([prefix, lower, suffix]) => {
         const combined = [...prefix, lower, ...suffix];
@@ -74,13 +89,19 @@ describe('cloudfront-dist-id validation', () => {
 
   it('rejects IDs with special characters', () => {
     const SPECIAL_CHARS = ['-', '_', '.', '@', '#', '$', '%'];
-    
+
     // Generate IDs with at least one special character
     const withSpecialArb = fc
       .tuple(
-        fc.array(fc.constantFrom(...UPPER_ALPHANUM), { minLength: 0, maxLength: 12 }),
+        fc.array(fc.constantFrom(...UPPER_ALPHANUM), {
+          minLength: 0,
+          maxLength: 12,
+        }),
         fc.constantFrom(...SPECIAL_CHARS),
-        fc.array(fc.constantFrom(...UPPER_ALPHANUM), { minLength: 0, maxLength: 12 })
+        fc.array(fc.constantFrom(...UPPER_ALPHANUM), {
+          minLength: 0,
+          maxLength: 12,
+        })
       )
       .map(([prefix, special, suffix]) => {
         const combined = [...prefix, special, ...suffix];
