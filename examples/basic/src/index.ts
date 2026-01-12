@@ -123,7 +123,7 @@ try {
     console.log('  Error name:', error.name);
     console.log('  Error message:', error.message);
     if ('errors' in error) {
-      console.log('  Validation errors:', (error as any).errors);
+      console.log('  Validation errors:', error.errors);
     }
   }
   console.log();
