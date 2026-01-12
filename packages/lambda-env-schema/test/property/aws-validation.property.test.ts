@@ -4,18 +4,29 @@ import {
   AWS_REGIONS,
   extractAccountIdFromDynamoDBArn,
   extractAccountIdFromIAMArn,
+  extractAccountIdFromSNSTopicArn,
+  extractAccountIdFromSQSQueueArn,
+  extractAccountIdFromSQSQueueUrl,
   extractRegionFromDynamoDBArn,
   extractRegionFromRDSEndpoint,
+  extractRegionFromSNSTopicArn,
+  extractRegionFromSQSQueueArn,
+  extractRegionFromSQSQueueUrl,
   isValidAWSAccountId,
   isValidAWSRegion,
   isValidDynamoDBTableArn,
   isValidDynamoDBTableName,
+  isValidEventBusName,
   isValidIAMRoleArn,
   isValidIAMUserArn,
+  isValidLambdaFunctionName,
   isValidRDSClusterId,
   isValidRDSEndpoint,
   isValidS3Arn,
   isValidS3BucketName,
+  isValidSNSTopicArn,
+  isValidSQSQueueArn,
+  isValidSQSQueueUrl,
 } from '../../src/aws/aws-validation-types';
 
 // Helper to create a string from an array of characters
@@ -1016,6 +1027,514 @@ describe('AWS validation property tests', () => {
       fc.assert(
         fc.property(invalidCharsArb, (clusterId) => {
           expect(isValidRDSClusterId(clusterId)).toBe(false);
+        }),
+        { numRuns: 100 }
+      );
+    });
+  });
+
+  describe('lambda-function-name validation', () => {
+    // Lambda function name characters: alphanumeric, hyphens, underscores
+    const LAMBDA_NAME_CHARS = [...ALPHANUM, '-', '_'];
+
+    // Generator for valid Lambda function names (1-64 chars)
+    const validFunctionNameArb = fc
+      .array(fc.constantFrom(...LAMBDA_NAME_CHARS), {
+        minLength: 1,
+        maxLength: 64,
+      })
+      .map(charArrayToString);
+
+    it('accepts valid Lambda function names', () => {
+      fc.assert(
+        fc.property(validFunctionNameArb, (functionName) => {
+          expect(isValidLambdaFunctionName(functionName)).toBe(true);
+        }),
+        { numRuns: 100 }
+      );
+    });
+
+    it('rejects function names longer than 64 characters', () => {
+      const longNameArb = fc
+        .array(fc.constantFrom(...LAMBDA_NAME_CHARS), {
+          minLength: 65,
+          maxLength: 100,
+        })
+        .map(charArrayToString);
+
+      fc.assert(
+        fc.property(longNameArb, (longName) => {
+          expect(isValidLambdaFunctionName(longName)).toBe(false);
+        }),
+        { numRuns: 100 }
+      );
+    });
+
+    it('rejects empty function names', () => {
+      expect(isValidLambdaFunctionName('')).toBe(false);
+    });
+
+    it('rejects function names with invalid characters', () => {
+      const invalidCharsArb = fc
+        .tuple(
+          fc
+            .array(fc.constantFrom(...LAMBDA_NAME_CHARS), {
+              minLength: 1,
+              maxLength: 30,
+            })
+            .map(charArrayToString),
+          fc.constantFrom('.', '@', '#', '$', '%', '&', '*', '!', ' ', '/'),
+          fc
+            .array(fc.constantFrom(...LAMBDA_NAME_CHARS), {
+              minLength: 1,
+              maxLength: 30,
+            })
+            .map(charArrayToString)
+        )
+        .map(
+          ([before, invalidChar, after]) => `${before}${invalidChar}${after}`
+        )
+        .filter((name) => name.length >= 1 && name.length <= 64);
+
+      fc.assert(
+        fc.property(invalidCharsArb, (name) => {
+          expect(isValidLambdaFunctionName(name)).toBe(false);
+        }),
+        { numRuns: 100 }
+      );
+    });
+  });
+
+  describe('sqs-queue-url validation', () => {
+    // Generator for valid AWS regions
+    const validRegionArb = fc.constantFrom(...AWS_REGIONS);
+
+    // Generator for valid 12-digit account IDs
+    const validAccountIdArb = fc
+      .array(fc.constantFrom(...DIGITS), { minLength: 12, maxLength: 12 })
+      .map(charArrayToString);
+
+    // SQS queue name characters: alphanumeric, hyphens, underscores
+    const SQS_QUEUE_NAME_CHARS = [...ALPHANUM, '-', '_'];
+
+    // Generator for valid SQS queue names
+    const validQueueNameArb = fc
+      .array(fc.constantFrom(...SQS_QUEUE_NAME_CHARS), {
+        minLength: 1,
+        maxLength: 80,
+      })
+      .map(charArrayToString);
+
+    // Generator for valid SQS queue URLs
+    const validSQSQueueUrlArb = fc
+      .tuple(validRegionArb, validAccountIdArb, validQueueNameArb)
+      .map(
+        ([region, accountId, queueName]) =>
+          `https://sqs.${region}.amazonaws.com/${accountId}/${queueName}`
+      );
+
+    // Generator for valid FIFO SQS queue URLs
+    const validFifoSQSQueueUrlArb = fc
+      .tuple(validRegionArb, validAccountIdArb, validQueueNameArb)
+      .map(
+        ([region, accountId, queueName]) =>
+          `https://sqs.${region}.amazonaws.com/${accountId}/${queueName}.fifo`
+      );
+
+    it('accepts valid SQS queue URLs', () => {
+      fc.assert(
+        fc.property(validSQSQueueUrlArb, (url) => {
+          expect(isValidSQSQueueUrl(url)).toBe(true);
+        }),
+        { numRuns: 100 }
+      );
+    });
+
+    it('accepts valid FIFO SQS queue URLs', () => {
+      fc.assert(
+        fc.property(validFifoSQSQueueUrlArb, (url) => {
+          expect(isValidSQSQueueUrl(url)).toBe(true);
+        }),
+        { numRuns: 100 }
+      );
+    });
+
+    it('rejects URLs with invalid account ID', () => {
+      const invalidAccountIdArb = fc
+        .array(fc.constantFrom(...DIGITS), { minLength: 1, maxLength: 20 })
+        .map(charArrayToString)
+        .filter((s) => s.length !== 12);
+
+      fc.assert(
+        fc.property(
+          validRegionArb,
+          invalidAccountIdArb,
+          validQueueNameArb,
+          (region, invalidAccountId, queueName) => {
+            const invalidUrl = `https://sqs.${region}.amazonaws.com/${invalidAccountId}/${queueName}`;
+            expect(isValidSQSQueueUrl(invalidUrl)).toBe(false);
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
+
+    it('rejects URLs with http instead of https', () => {
+      fc.assert(
+        fc.property(
+          validRegionArb,
+          validAccountIdArb,
+          validQueueNameArb,
+          (region, accountId, queueName) => {
+            const httpUrl = `http://sqs.${region}.amazonaws.com/${accountId}/${queueName}`;
+            expect(isValidSQSQueueUrl(httpUrl)).toBe(false);
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
+
+    it('extracts region correctly from valid SQS queue URL', () => {
+      fc.assert(
+        fc.property(
+          validRegionArb,
+          validAccountIdArb,
+          validQueueNameArb,
+          (region, accountId, queueName) => {
+            const url = `https://sqs.${region}.amazonaws.com/${accountId}/${queueName}`;
+            expect(extractRegionFromSQSQueueUrl(url)).toBe(region);
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
+
+    it('extracts account ID correctly from valid SQS queue URL', () => {
+      fc.assert(
+        fc.property(
+          validRegionArb,
+          validAccountIdArb,
+          validQueueNameArb,
+          (region, accountId, queueName) => {
+            const url = `https://sqs.${region}.amazonaws.com/${accountId}/${queueName}`;
+            expect(extractAccountIdFromSQSQueueUrl(url)).toBe(accountId);
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
+  });
+
+  describe('sqs-queue-arn validation', () => {
+    // Generator for valid AWS regions
+    const validRegionArb = fc.constantFrom(...AWS_REGIONS);
+
+    // Generator for valid 12-digit account IDs
+    const validAccountIdArb = fc
+      .array(fc.constantFrom(...DIGITS), { minLength: 12, maxLength: 12 })
+      .map(charArrayToString);
+
+    // SQS queue name characters: alphanumeric, hyphens, underscores
+    const SQS_QUEUE_NAME_CHARS = [...ALPHANUM, '-', '_'];
+
+    // Generator for valid SQS queue names
+    const validQueueNameArb = fc
+      .array(fc.constantFrom(...SQS_QUEUE_NAME_CHARS), {
+        minLength: 1,
+        maxLength: 80,
+      })
+      .map(charArrayToString);
+
+    // Generator for valid SQS queue ARNs
+    const validSQSQueueArnArb = fc
+      .tuple(validRegionArb, validAccountIdArb, validQueueNameArb)
+      .map(
+        ([region, accountId, queueName]) =>
+          `arn:aws:sqs:${region}:${accountId}:${queueName}`
+      );
+
+    // Generator for valid FIFO SQS queue ARNs
+    const validFifoSQSQueueArnArb = fc
+      .tuple(validRegionArb, validAccountIdArb, validQueueNameArb)
+      .map(
+        ([region, accountId, queueName]) =>
+          `arn:aws:sqs:${region}:${accountId}:${queueName}.fifo`
+      );
+
+    it('accepts valid SQS queue ARNs', () => {
+      fc.assert(
+        fc.property(validSQSQueueArnArb, (arn) => {
+          expect(isValidSQSQueueArn(arn)).toBe(true);
+        }),
+        { numRuns: 100 }
+      );
+    });
+
+    it('accepts valid FIFO SQS queue ARNs', () => {
+      fc.assert(
+        fc.property(validFifoSQSQueueArnArb, (arn) => {
+          expect(isValidSQSQueueArn(arn)).toBe(true);
+        }),
+        { numRuns: 100 }
+      );
+    });
+
+    it('rejects ARNs with wrong service', () => {
+      fc.assert(
+        fc.property(
+          validRegionArb,
+          validAccountIdArb,
+          validQueueNameArb,
+          (region, accountId, queueName) => {
+            const wrongServiceArn = `arn:aws:sns:${region}:${accountId}:${queueName}`;
+            expect(isValidSQSQueueArn(wrongServiceArn)).toBe(false);
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
+
+    it('rejects ARNs with invalid account ID', () => {
+      const invalidAccountIdArb = fc
+        .array(fc.constantFrom(...DIGITS), { minLength: 1, maxLength: 20 })
+        .map(charArrayToString)
+        .filter((s) => s.length !== 12);
+
+      fc.assert(
+        fc.property(
+          validRegionArb,
+          invalidAccountIdArb,
+          validQueueNameArb,
+          (region, invalidAccountId, queueName) => {
+            const invalidArn = `arn:aws:sqs:${region}:${invalidAccountId}:${queueName}`;
+            expect(isValidSQSQueueArn(invalidArn)).toBe(false);
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
+
+    it('extracts region correctly from valid SQS queue ARN', () => {
+      fc.assert(
+        fc.property(
+          validRegionArb,
+          validAccountIdArb,
+          validQueueNameArb,
+          (region, accountId, queueName) => {
+            const arn = `arn:aws:sqs:${region}:${accountId}:${queueName}`;
+            expect(extractRegionFromSQSQueueArn(arn)).toBe(region);
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
+
+    it('extracts account ID correctly from valid SQS queue ARN', () => {
+      fc.assert(
+        fc.property(
+          validRegionArb,
+          validAccountIdArb,
+          validQueueNameArb,
+          (region, accountId, queueName) => {
+            const arn = `arn:aws:sqs:${region}:${accountId}:${queueName}`;
+            expect(extractAccountIdFromSQSQueueArn(arn)).toBe(accountId);
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
+  });
+
+  describe('sns-topic-arn validation', () => {
+    // Generator for valid AWS regions
+    const validRegionArb = fc.constantFrom(...AWS_REGIONS);
+
+    // Generator for valid 12-digit account IDs
+    const validAccountIdArb = fc
+      .array(fc.constantFrom(...DIGITS), { minLength: 12, maxLength: 12 })
+      .map(charArrayToString);
+
+    // SNS topic name characters: alphanumeric, hyphens, underscores
+    const SNS_TOPIC_NAME_CHARS = [...ALPHANUM, '-', '_'];
+
+    // Generator for valid SNS topic names
+    const validTopicNameArb = fc
+      .array(fc.constantFrom(...SNS_TOPIC_NAME_CHARS), {
+        minLength: 1,
+        maxLength: 256,
+      })
+      .map(charArrayToString);
+
+    // Generator for valid SNS topic ARNs
+    const validSNSTopicArnArb = fc
+      .tuple(validRegionArb, validAccountIdArb, validTopicNameArb)
+      .map(
+        ([region, accountId, topicName]) =>
+          `arn:aws:sns:${region}:${accountId}:${topicName}`
+      );
+
+    // Generator for valid FIFO SNS topic ARNs
+    const validFifoSNSTopicArnArb = fc
+      .tuple(validRegionArb, validAccountIdArb, validTopicNameArb)
+      .map(
+        ([region, accountId, topicName]) =>
+          `arn:aws:sns:${region}:${accountId}:${topicName}.fifo`
+      );
+
+    it('accepts valid SNS topic ARNs', () => {
+      fc.assert(
+        fc.property(validSNSTopicArnArb, (arn) => {
+          expect(isValidSNSTopicArn(arn)).toBe(true);
+        }),
+        { numRuns: 100 }
+      );
+    });
+
+    it('accepts valid FIFO SNS topic ARNs', () => {
+      fc.assert(
+        fc.property(validFifoSNSTopicArnArb, (arn) => {
+          expect(isValidSNSTopicArn(arn)).toBe(true);
+        }),
+        { numRuns: 100 }
+      );
+    });
+
+    it('rejects ARNs with wrong service', () => {
+      fc.assert(
+        fc.property(
+          validRegionArb,
+          validAccountIdArb,
+          validTopicNameArb,
+          (region, accountId, topicName) => {
+            const wrongServiceArn = `arn:aws:sqs:${region}:${accountId}:${topicName}`;
+            expect(isValidSNSTopicArn(wrongServiceArn)).toBe(false);
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
+
+    it('rejects ARNs with invalid account ID', () => {
+      const invalidAccountIdArb = fc
+        .array(fc.constantFrom(...DIGITS), { minLength: 1, maxLength: 20 })
+        .map(charArrayToString)
+        .filter((s) => s.length !== 12);
+
+      fc.assert(
+        fc.property(
+          validRegionArb,
+          invalidAccountIdArb,
+          validTopicNameArb,
+          (region, invalidAccountId, topicName) => {
+            const invalidArn = `arn:aws:sns:${region}:${invalidAccountId}:${topicName}`;
+            expect(isValidSNSTopicArn(invalidArn)).toBe(false);
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
+
+    it('extracts region correctly from valid SNS topic ARN', () => {
+      fc.assert(
+        fc.property(
+          validRegionArb,
+          validAccountIdArb,
+          validTopicNameArb,
+          (region, accountId, topicName) => {
+            const arn = `arn:aws:sns:${region}:${accountId}:${topicName}`;
+            expect(extractRegionFromSNSTopicArn(arn)).toBe(region);
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
+
+    it('extracts account ID correctly from valid SNS topic ARN', () => {
+      fc.assert(
+        fc.property(
+          validRegionArb,
+          validAccountIdArb,
+          validTopicNameArb,
+          (region, accountId, topicName) => {
+            const arn = `arn:aws:sns:${region}:${accountId}:${topicName}`;
+            expect(extractAccountIdFromSNSTopicArn(arn)).toBe(accountId);
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
+  });
+
+  describe('event-bus-name validation', () => {
+    // EventBridge event bus name characters: alphanumeric, hyphens, underscores, periods, forward slashes
+    const EVENT_BUS_NAME_CHARS = [...ALPHANUM, '-', '_', '.', '/'];
+
+    // Generator for valid custom event bus names (1-256 chars)
+    const validCustomBusNameArb = fc
+      .array(fc.constantFrom(...EVENT_BUS_NAME_CHARS), {
+        minLength: 1,
+        maxLength: 256,
+      })
+      .map(charArrayToString);
+
+    it('accepts "default" event bus name', () => {
+      expect(isValidEventBusName('default')).toBe(true);
+    });
+
+    it('accepts valid custom event bus names', () => {
+      fc.assert(
+        fc.property(validCustomBusNameArb, (busName) => {
+          expect(isValidEventBusName(busName)).toBe(true);
+        }),
+        { numRuns: 100 }
+      );
+    });
+
+    it('rejects event bus names longer than 256 characters', () => {
+      const longNameArb = fc
+        .array(fc.constantFrom(...EVENT_BUS_NAME_CHARS), {
+          minLength: 257,
+          maxLength: 300,
+        })
+        .map(charArrayToString);
+
+      fc.assert(
+        fc.property(longNameArb, (longName) => {
+          expect(isValidEventBusName(longName)).toBe(false);
+        }),
+        { numRuns: 100 }
+      );
+    });
+
+    it('rejects empty event bus names', () => {
+      expect(isValidEventBusName('')).toBe(false);
+    });
+
+    it('rejects event bus names with invalid characters', () => {
+      const invalidCharsArb = fc
+        .tuple(
+          fc
+            .array(fc.constantFrom(...EVENT_BUS_NAME_CHARS), {
+              minLength: 1,
+              maxLength: 100,
+            })
+            .map(charArrayToString),
+          fc.constantFrom('@', '#', '$', '%', '&', '*', '!', ' ', '\\'),
+          fc
+            .array(fc.constantFrom(...EVENT_BUS_NAME_CHARS), {
+              minLength: 1,
+              maxLength: 100,
+            })
+            .map(charArrayToString)
+        )
+        .map(
+          ([before, invalidChar, after]) => `${before}${invalidChar}${after}`
+        )
+        .filter((name) => name.length >= 1 && name.length <= 256);
+
+      fc.assert(
+        fc.property(invalidCharsArb, (name) => {
+          expect(isValidEventBusName(name)).toBe(false);
         }),
         { numRuns: 100 }
       );

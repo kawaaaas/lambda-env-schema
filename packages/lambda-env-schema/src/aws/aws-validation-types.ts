@@ -719,3 +719,385 @@ export function isValidRDSClusterId(value: string): boolean {
 
   return true;
 }
+
+/**
+ * Regular expression pattern for Lambda function name validation.
+ *
+ * Lambda function names must:
+ * - Be 1-64 characters long
+ * - Contain only alphanumeric characters, hyphens (-), and underscores (_)
+ *
+ * @see https://docs.aws.amazon.com/lambda/latest/dg/API_CreateFunction.html
+ */
+const LAMBDA_FUNCTION_NAME_PATTERN = /^[a-zA-Z0-9_-]{1,64}$/;
+
+/**
+ * Validates a Lambda function name against AWS naming rules.
+ *
+ * Lambda function names must:
+ * - Be 1-64 characters long
+ * - Contain only alphanumeric characters (a-z, A-Z, 0-9), hyphens (-), and underscores (_)
+ *
+ * @param value - The function name to validate
+ * @returns true if the function name is valid, false otherwise
+ *
+ * @see https://docs.aws.amazon.com/lambda/latest/dg/API_CreateFunction.html
+ *
+ * @example
+ * ```typescript
+ * isValidLambdaFunctionName('my-function');           // true
+ * isValidLambdaFunctionName('MyFunction_123');        // true
+ * isValidLambdaFunctionName('a');                     // true (minimum 1 character)
+ * isValidLambdaFunctionName('my_function-name');      // true
+ * isValidLambdaFunctionName('');                      // false (empty)
+ * isValidLambdaFunctionName('a'.repeat(65));          // false (too long)
+ * isValidLambdaFunctionName('my function');           // false (contains space)
+ * isValidLambdaFunctionName('my.function');           // false (contains period)
+ * isValidLambdaFunctionName('my@function');           // false (invalid character)
+ * ```
+ */
+export function isValidLambdaFunctionName(value: string): boolean {
+  return LAMBDA_FUNCTION_NAME_PATTERN.test(value);
+}
+
+/**
+ * Regular expression pattern for SQS queue URL validation.
+ *
+ * SQS queue URLs follow the format:
+ * https://sqs.<region>.amazonaws.com/<account-id>/<queue-name>
+ *
+ * Queue names can contain alphanumeric characters, hyphens, and underscores.
+ * FIFO queue names end with ".fifo".
+ *
+ * @see https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-queue-message-identifiers.html
+ */
+const SQS_QUEUE_URL_PATTERN =
+  /^https:\/\/sqs\.[a-z]{2}-[a-z]+-\d\.amazonaws\.com\/\d{12}\/[\w-]+(\.fifo)?$/;
+
+/**
+ * Validates an SQS queue URL.
+ *
+ * SQS queue URLs follow the format:
+ * https://sqs.<region>.amazonaws.com/<account-id>/<queue-name>
+ *
+ * Queue names can contain alphanumeric characters, hyphens (-), and underscores (_).
+ * FIFO queue names must end with ".fifo".
+ *
+ * @param value - The SQS queue URL to validate
+ * @returns true if the value is a valid SQS queue URL, false otherwise
+ *
+ * @see https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-queue-message-identifiers.html
+ *
+ * @example
+ * ```typescript
+ * isValidSQSQueueUrl('https://sqs.us-east-1.amazonaws.com/123456789012/my-queue'); // true
+ * isValidSQSQueueUrl('https://sqs.ap-northeast-1.amazonaws.com/123456789012/MyQueue_123'); // true
+ * isValidSQSQueueUrl('https://sqs.us-east-1.amazonaws.com/123456789012/my-queue.fifo'); // true (FIFO queue)
+ * isValidSQSQueueUrl('https://sqs.us-east-1.amazonaws.com/12345678901/my-queue'); // false (invalid account ID)
+ * isValidSQSQueueUrl('http://sqs.us-east-1.amazonaws.com/123456789012/my-queue'); // false (http instead of https)
+ * isValidSQSQueueUrl('https://sns.us-east-1.amazonaws.com/123456789012/my-topic'); // false (wrong service)
+ * ```
+ */
+export function isValidSQSQueueUrl(value: string): boolean {
+  return SQS_QUEUE_URL_PATTERN.test(value);
+}
+
+/**
+ * Extracts the AWS region from an SQS queue URL.
+ *
+ * @param value - The SQS queue URL to extract region from
+ * @returns The region code, or undefined if extraction fails
+ *
+ * @example
+ * ```typescript
+ * extractRegionFromSQSQueueUrl('https://sqs.us-east-1.amazonaws.com/123456789012/my-queue'); // 'us-east-1'
+ * extractRegionFromSQSQueueUrl('https://sqs.ap-northeast-1.amazonaws.com/123456789012/my-queue'); // 'ap-northeast-1'
+ * extractRegionFromSQSQueueUrl('invalid'); // undefined
+ * ```
+ */
+export function extractRegionFromSQSQueueUrl(
+  value: string
+): string | undefined {
+  // SQS queue URL format: https://sqs.<region>.amazonaws.com/<account-id>/<queue-name>
+  const match = value.match(
+    /^https:\/\/sqs\.([a-z]{2}-[a-z]+-\d)\.amazonaws\.com\//
+  );
+  return match ? match[1] : undefined;
+}
+
+/**
+ * Extracts the AWS account ID from an SQS queue URL.
+ *
+ * @param value - The SQS queue URL to extract account ID from
+ * @returns The 12-digit account ID, or undefined if extraction fails
+ *
+ * @example
+ * ```typescript
+ * extractAccountIdFromSQSQueueUrl('https://sqs.us-east-1.amazonaws.com/123456789012/my-queue'); // '123456789012'
+ * extractAccountIdFromSQSQueueUrl('invalid'); // undefined
+ * ```
+ */
+export function extractAccountIdFromSQSQueueUrl(
+  value: string
+): string | undefined {
+  // SQS queue URL format: https://sqs.<region>.amazonaws.com/<account-id>/<queue-name>
+  const match = value.match(
+    /^https:\/\/sqs\.[a-z]{2}-[a-z]+-\d\.amazonaws\.com\/(\d{12})\//
+  );
+  return match ? match[1] : undefined;
+}
+
+/**
+ * Regular expression pattern for SQS queue ARN validation.
+ *
+ * SQS queue ARNs follow the format:
+ * arn:aws:sqs:<region>:<account-id>:<queue-name>
+ *
+ * Queue names can contain alphanumeric characters, hyphens, and underscores.
+ * FIFO queue names end with ".fifo".
+ *
+ * @see https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-queue-message-identifiers.html
+ */
+const SQS_QUEUE_ARN_PATTERN =
+  /^arn:aws:sqs:[a-z]{2}-[a-z]+-\d:\d{12}:[\w-]+(\.fifo)?$/;
+
+/**
+ * Validates an SQS queue ARN.
+ *
+ * SQS queue ARNs follow the format:
+ * arn:aws:sqs:<region>:<account-id>:<queue-name>
+ *
+ * Queue names can contain alphanumeric characters, hyphens (-), and underscores (_).
+ * FIFO queue names must end with ".fifo".
+ *
+ * @param value - The SQS queue ARN to validate
+ * @returns true if the value is a valid SQS queue ARN, false otherwise
+ *
+ * @see https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-queue-message-identifiers.html
+ *
+ * @example
+ * ```typescript
+ * isValidSQSQueueArn('arn:aws:sqs:us-east-1:123456789012:my-queue'); // true
+ * isValidSQSQueueArn('arn:aws:sqs:ap-northeast-1:123456789012:MyQueue_123'); // true
+ * isValidSQSQueueArn('arn:aws:sqs:us-east-1:123456789012:my-queue.fifo'); // true (FIFO queue)
+ * isValidSQSQueueArn('arn:aws:sqs:us-east-1:12345678901:my-queue'); // false (invalid account ID)
+ * isValidSQSQueueArn('arn:aws:sns:us-east-1:123456789012:my-topic'); // false (wrong service)
+ * isValidSQSQueueArn('invalid'); // false
+ * ```
+ */
+export function isValidSQSQueueArn(value: string): boolean {
+  return SQS_QUEUE_ARN_PATTERN.test(value);
+}
+
+/**
+ * Extracts the AWS region from an SQS queue ARN.
+ *
+ * @param value - The SQS queue ARN to extract region from
+ * @returns The region code, or undefined if extraction fails
+ *
+ * @example
+ * ```typescript
+ * extractRegionFromSQSQueueArn('arn:aws:sqs:us-east-1:123456789012:my-queue'); // 'us-east-1'
+ * extractRegionFromSQSQueueArn('arn:aws:sqs:ap-northeast-1:123456789012:my-queue'); // 'ap-northeast-1'
+ * extractRegionFromSQSQueueArn('invalid'); // undefined
+ * ```
+ */
+export function extractRegionFromSQSQueueArn(
+  value: string
+): string | undefined {
+  // SQS ARN format: arn:aws:sqs:<region>:<account-id>:<queue-name>
+  const parts = value.split(':');
+  if (
+    parts.length >= 6 &&
+    parts[0] === 'arn' &&
+    parts[1] === 'aws' &&
+    parts[2] === 'sqs'
+  ) {
+    const region = parts[3];
+    // Basic region format check: xx-xxxx-N
+    if (/^[a-z]{2}-[a-z]+-\d$/.test(region)) {
+      return region;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Extracts the AWS account ID from an SQS queue ARN.
+ *
+ * @param value - The SQS queue ARN to extract account ID from
+ * @returns The 12-digit account ID, or undefined if extraction fails
+ *
+ * @example
+ * ```typescript
+ * extractAccountIdFromSQSQueueArn('arn:aws:sqs:us-east-1:123456789012:my-queue'); // '123456789012'
+ * extractAccountIdFromSQSQueueArn('invalid'); // undefined
+ * ```
+ */
+export function extractAccountIdFromSQSQueueArn(
+  value: string
+): string | undefined {
+  // SQS ARN format: arn:aws:sqs:<region>:<account-id>:<queue-name>
+  const parts = value.split(':');
+  if (
+    parts.length >= 6 &&
+    parts[0] === 'arn' &&
+    parts[1] === 'aws' &&
+    parts[2] === 'sqs'
+  ) {
+    const accountId = parts[4];
+    if (/^\d{12}$/.test(accountId)) {
+      return accountId;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Regular expression pattern for SNS topic ARN validation.
+ *
+ * SNS topic ARNs follow the format:
+ * arn:aws:sns:<region>:<account-id>:<topic-name>
+ *
+ * Topic names can contain alphanumeric characters, hyphens, and underscores.
+ * FIFO topic names end with ".fifo".
+ *
+ * @see https://docs.aws.amazon.com/sns/latest/dg/sns-create-topic.html
+ */
+const SNS_TOPIC_ARN_PATTERN =
+  /^arn:aws:sns:[a-z]{2}-[a-z]+-\d:\d{12}:[\w-]+(\.fifo)?$/;
+
+/**
+ * Validates an SNS topic ARN.
+ *
+ * SNS topic ARNs follow the format:
+ * arn:aws:sns:<region>:<account-id>:<topic-name>
+ *
+ * Topic names can contain alphanumeric characters, hyphens (-), and underscores (_).
+ * FIFO topic names must end with ".fifo".
+ *
+ * @param value - The SNS topic ARN to validate
+ * @returns true if the value is a valid SNS topic ARN, false otherwise
+ *
+ * @see https://docs.aws.amazon.com/sns/latest/dg/sns-create-topic.html
+ *
+ * @example
+ * ```typescript
+ * isValidSNSTopicArn('arn:aws:sns:us-east-1:123456789012:my-topic'); // true
+ * isValidSNSTopicArn('arn:aws:sns:ap-northeast-1:123456789012:MyTopic_123'); // true
+ * isValidSNSTopicArn('arn:aws:sns:us-east-1:123456789012:my-topic.fifo'); // true (FIFO topic)
+ * isValidSNSTopicArn('arn:aws:sns:us-east-1:12345678901:my-topic'); // false (invalid account ID)
+ * isValidSNSTopicArn('arn:aws:sqs:us-east-1:123456789012:my-queue'); // false (wrong service)
+ * isValidSNSTopicArn('invalid'); // false
+ * ```
+ */
+export function isValidSNSTopicArn(value: string): boolean {
+  return SNS_TOPIC_ARN_PATTERN.test(value);
+}
+
+/**
+ * Extracts the AWS region from an SNS topic ARN.
+ *
+ * @param value - The SNS topic ARN to extract region from
+ * @returns The region code, or undefined if extraction fails
+ *
+ * @example
+ * ```typescript
+ * extractRegionFromSNSTopicArn('arn:aws:sns:us-east-1:123456789012:my-topic'); // 'us-east-1'
+ * extractRegionFromSNSTopicArn('arn:aws:sns:ap-northeast-1:123456789012:my-topic'); // 'ap-northeast-1'
+ * extractRegionFromSNSTopicArn('invalid'); // undefined
+ * ```
+ */
+export function extractRegionFromSNSTopicArn(
+  value: string
+): string | undefined {
+  // SNS ARN format: arn:aws:sns:<region>:<account-id>:<topic-name>
+  const parts = value.split(':');
+  if (
+    parts.length >= 6 &&
+    parts[0] === 'arn' &&
+    parts[1] === 'aws' &&
+    parts[2] === 'sns'
+  ) {
+    const region = parts[3];
+    // Basic region format check: xx-xxxx-N
+    if (/^[a-z]{2}-[a-z]+-\d$/.test(region)) {
+      return region;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Extracts the AWS account ID from an SNS topic ARN.
+ *
+ * @param value - The SNS topic ARN to extract account ID from
+ * @returns The 12-digit account ID, or undefined if extraction fails
+ *
+ * @example
+ * ```typescript
+ * extractAccountIdFromSNSTopicArn('arn:aws:sns:us-east-1:123456789012:my-topic'); // '123456789012'
+ * extractAccountIdFromSNSTopicArn('invalid'); // undefined
+ * ```
+ */
+export function extractAccountIdFromSNSTopicArn(
+  value: string
+): string | undefined {
+  // SNS ARN format: arn:aws:sns:<region>:<account-id>:<topic-name>
+  const parts = value.split(':');
+  if (
+    parts.length >= 6 &&
+    parts[0] === 'arn' &&
+    parts[1] === 'aws' &&
+    parts[2] === 'sns'
+  ) {
+    const accountId = parts[4];
+    if (/^\d{12}$/.test(accountId)) {
+      return accountId;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Regular expression pattern for EventBridge event bus name validation.
+ *
+ * EventBridge event bus names must:
+ * - Be "default" (the default event bus), OR
+ * - Be 1-256 characters long
+ * - Contain only alphanumeric characters, hyphens (-), underscores (_), periods (.), and forward slashes (/)
+ *
+ * @see https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-create-event-bus.html
+ */
+const EVENT_BUS_NAME_PATTERN = /^(default|[\w./-]{1,256})$/;
+
+/**
+ * Validates an EventBridge event bus name against AWS naming rules.
+ *
+ * EventBridge event bus names must:
+ * - Be "default" (the default event bus), OR
+ * - Be 1-256 characters long
+ * - Contain only alphanumeric characters (a-z, A-Z, 0-9), hyphens (-), underscores (_), periods (.), and forward slashes (/)
+ *
+ * @param value - The event bus name to validate
+ * @returns true if the event bus name is valid, false otherwise
+ *
+ * @see https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-create-event-bus.html
+ *
+ * @example
+ * ```typescript
+ * isValidEventBusName('default');              // true (default event bus)
+ * isValidEventBusName('my-event-bus');         // true
+ * isValidEventBusName('MyEventBus_123');       // true
+ * isValidEventBusName('my.event.bus');         // true
+ * isValidEventBusName('my/event/bus');         // true
+ * isValidEventBusName('a');                    // true (minimum 1 character)
+ * isValidEventBusName('');                     // false (empty)
+ * isValidEventBusName('a'.repeat(257));        // false (too long)
+ * isValidEventBusName('my event bus');         // false (contains space)
+ * isValidEventBusName('my@event#bus');         // false (invalid characters)
+ * ```
+ */
+export function isValidEventBusName(value: string): boolean {
+  return EVENT_BUS_NAME_PATTERN.test(value);
+}
