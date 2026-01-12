@@ -1,6 +1,6 @@
 import * as fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { createEnv, toCamelCase } from '../src/create-env';
+import { createEnv, toCamelCase } from '../../src/core/create-env';
 
 describe('naming strategy property tests', () => {
   describe('toCamelCase transformation', () => {

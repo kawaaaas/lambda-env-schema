@@ -2,7 +2,7 @@
  * Main createEnv function implementation.
  */
 
-import { type AWSLambdaEnv, getAWSLambdaEnv } from './aws-env';
+import { type AWSLambdaEnv, getAWSLambdaEnv } from './aws/aws-env';
 import {
   coerceArray,
   coerceBoolean,
@@ -10,9 +10,9 @@ import {
   coerceNumber,
   coerceString,
 } from './coercion';
-import type { ValidationError } from './errors';
-import { EnvironmentValidationError } from './errors';
-import type { EnvSchema, InferEnv, SchemaItem } from './types';
+import type { ValidationError } from './share/errors';
+import { EnvironmentValidationError } from './share/errors';
+import type { EnvSchema, InferEnv, SchemaItem } from './share/types';
 import {
   applyDefault,
   checkConstraints,

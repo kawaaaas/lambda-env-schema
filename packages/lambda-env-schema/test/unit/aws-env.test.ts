@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AWS_ENV_MAPPING, getAWSLambdaEnv } from '../src/aws-env';
+import { AWS_ENV_MAPPING, getAWSLambdaEnv } from '../../src/aws/aws-env';
 
 describe('AWS_ENV_MAPPING', () => {
   it('maps region to AWS_REGION', () => {

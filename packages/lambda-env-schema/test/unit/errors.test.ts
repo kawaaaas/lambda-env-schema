@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import type { ValidationError } from '../src/errors';
+import type { ValidationError } from '../../src/share/errors';
 import {
   EnvironmentValidationError,
   formatErrorMessage,
   formatValue,
-} from '../src/errors';
+} from '../../src/share/errors';
 
 describe('formatValue', () => {
   it('masks secret values with ***', () => {

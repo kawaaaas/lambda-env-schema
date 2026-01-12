@@ -1,19 +1,19 @@
 import * as fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { EnvironmentValidationError, formatValue } from '../src/errors';
+import { EnvironmentValidationError, formatValue } from '../../src/errors';
 import type {
   ArraySchema,
   NumberSchema,
   SchemaItem,
   StringSchema,
-} from '../src/types';
+} from '../../src/types';
 import {
   applyDefault,
   checkConstraints,
   checkEnum,
   checkRequired,
   formatValue as validationFormatValue,
-} from '../src/validation';
+} from '../../src/validation';
 
 describe('validation property tests', () => {
   describe('error aggregation', () => {

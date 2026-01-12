@@ -6,7 +6,7 @@ import {
   coerceNumberArray,
   coerceString,
   coerceStringArray,
-} from '../src/coercion';
+} from '../../src//core/coercion';
 
 describe('coercion property tests', () => {
   describe('number coercion correctness', () => {

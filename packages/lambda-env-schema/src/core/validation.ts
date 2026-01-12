@@ -2,8 +2,8 @@
  * Validation functions for environment variable schema validation.
  */
 
-import type { ValidationError } from './errors';
-import type { SchemaItem } from './types';
+import type { ValidationError } from '../share/errors';
+import type { SchemaItem } from '../share/types';
 
 /**
  * Formats a value for display in error messages.

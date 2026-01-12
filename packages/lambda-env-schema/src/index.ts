@@ -8,8 +8,8 @@
 // Main API
 // =============================================================================
 
-export type { CreateEnvOptions, EnvResult } from './create-env';
-export { createEnv, toCamelCase } from './create-env';
+export type { CreateEnvOptions, EnvResult } from './core/create-env';
+export { createEnv, toCamelCase } from './core/create-env';
 
 // =============================================================================
 // Schema Types
@@ -33,22 +33,34 @@ export type {
   SnakeToCamel,
   // Schema definitions
   StringSchema,
-} from './types';
+} from './share/types';
 
 // =============================================================================
 // AWS Lambda Environment
 // =============================================================================
 
-export type { AWSLambdaEnv } from './aws-env';
-export { AWS_ENV_MAPPING, getAWSLambdaEnv } from './aws-env';
+export type { AWSLambdaEnv } from './aws/aws-env';
+export { AWS_ENV_MAPPING, getAWSLambdaEnv } from './aws/aws-env';
+
+// =============================================================================
+// AWS Validation Types
+// =============================================================================
+
+export type {
+  AWSRegion,
+  AWSValidationType,
+  ValidationRule,
+  ValidationScope,
+} from './aws/aws-validation-types';
+export { AWS_REGIONS } from './aws/aws-validation-types';
 
 // =============================================================================
 // Error Handling
 // =============================================================================
 
-export type { ValidationError } from './errors';
+export type { ValidationError } from './share/errors';
 export {
   EnvironmentValidationError,
   formatErrorMessage,
   formatValue,
-} from './errors';
+} from './share/errors';
