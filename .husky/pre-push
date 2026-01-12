@@ -1,1 +1,2 @@
 pnpm lint
+pnpm --filter lambda-env-schema test
