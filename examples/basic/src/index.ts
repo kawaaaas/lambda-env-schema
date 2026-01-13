@@ -134,7 +134,7 @@ console.log('='.repeat(60));
 console.log();
 console.log('Key features demonstrated:');
 console.log(
-	'  ✓ Automatic type coercion (string → number, boolean, array, json)',
+  '  ✓ Automatic type coercion (string → number, boolean, array, json)'
 );
 console.log('  ✓ AWS Parsed Types (ARNs, URLs → structured objects)');
 console.log('  ✓ Type-safe property access with auto-completion');
