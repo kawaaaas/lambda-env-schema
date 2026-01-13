@@ -49,9 +49,8 @@ console.log('  ALLOWED_ORIGINS:', env.ALLOWED_ORIGINS);
 console.log('  DATABASE_CONFIG:', env.DATABASE_CONFIG);
 console.log();
 
-
 // =============================================================================
-// Example 2: AWS Parsed Types 
+// Example 2: AWS Parsed Types
 // =============================================================================
 
 console.log('📦 Example 2: AWS Parsed Types');
