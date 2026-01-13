@@ -25,7 +25,6 @@
         "noUselessElse": "error"
       },
       "suspicious": {
-        "noTsIgnore": "error",
         "noConfusingVoidType": "error",
         "noDoubleEquals": "error",
         "noGlobalIsNan": "error",
@@ -34,17 +33,13 @@
         "noPrototypeBuiltins": "error",
         "noSkippedTests": "error",
         "noFocusedTests": "error",
-        "noUnassignedVariables": "error",
         "noVar": "error",
         "useAdjacentOverloadSignatures": "error",
         "useAwait": "error",
         "useErrorMessage": "error",
-        "useIsArray": "error",
-        "useStaticResponseMethods": "error"
+        "useIsArray": "error"
       },
       "correctness": {
-        "useParseIntRadix": "error",
-        "useSingleJsDocAsterisk": "error",
         "noUnusedVariables": "error",
         "noUnusedPrivateClassMembers": "error",
         "noUnusedImports": "error",
@@ -74,18 +69,12 @@
       "!**/.claude",
       "!**/.vscode",
       "!**/.amazonq",
-      "!**/api",
-      "!**/site",
-      "!**/.devcontainer",
       "!**/node_modules",
       "!**/.tsbuildinfo",
       "!**/coverage",
-      "!**/lib",
+      "!**/dist",
       "!**/cdk.out",
-      "!**/site",
-      "!**/.aws-sam",
-      "!**/*.generated.js",
-      "!**/*.generated.d.ts"
+      "!**/.aws-sam"
     ]
   }
 }
