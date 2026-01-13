@@ -357,24 +357,6 @@ console.log(env.S3_ARN.key); // string | undefined
 - **Networking**: `vpc-id`, `subnet-id`, `security-group-id`, `ec2-instance-id`
 - **Other**: `event-bus-name`, `api-gateway-id`, `cloudfront-dist-id`, `ssm-parameter-name`, `arn`
 
-### Error Handling
-
-```typescript
-import { createEnv, EnvironmentValidationError } from '@kawaaaas/lambda-env-schema';
-
-try {
-  const env = createEnv({
-    API_KEY: { type: 'string', required: true, secret: true },
-  });
-} catch (error) {
-  if (error instanceof EnvironmentValidationError) {
-    console.error('Validation failed:', error.message);
-    console.error('Errors:', error.errors);
-    // error.errors: Array<{ key: string; message: string }>
-  }
-}
-```
-
 ### CamelCase Naming Strategy
 
 Convert SNAKE_CASE environment variables to camelCase:
@@ -397,43 +379,22 @@ console.log(env.databaseUrl); // instead of env.DATABASE_URL
 
 ## 📚 Documentation
 
-### Table of Contents
+### API Reference
 
-- [API Reference](#api-reference)
-  - [createEnv()](#createenvschema-options)
-  - [Schema Types](#schema-types)
-  - [Type Inference](#type-inference)
-- [Advanced Usage](#advanced-usage)
-  - [Custom Validation](#custom-validation)
-  - [Environment-specific Configuration](#environment-specific-configuration)
-  - [Testing Strategies](#testing-strategies)
-- [Error Handling](#error-handling-1)
-- [Best Practices](#best-practices)
-- [Troubleshooting](#troubleshooting)
-
----
-
-## API Reference
-
-### `createEnv(schema, options?)`
+#### `createEnv(schema, options?)`
 
 Creates a validated and typed environment object.
 
-#### Parameters
-
+**Parameters:**
 - `schema`: `EnvSchema` - Schema definition for environment variables
 - `options?`: `CreateEnvOptions` - Optional configuration
   - `namingStrategy?`: `'preserve' | 'camelCase'` - Naming strategy for keys (default: `'preserve'`)
 
-#### Returns
-
-`EnvResult<S, Strategy>` - Validated environment object with:
+**Returns:** `EnvResult<S, Strategy>` - Validated environment object with:
 - All schema-defined variables (typed according to schema)
 - `aws`: AWS Lambda environment variables
 
-#### Throws
-
-`EnvironmentValidationError` - When validation fails
+**Throws:** `EnvironmentValidationError` - When validation fails
 
 ### Schema Types
 
@@ -450,7 +411,6 @@ Creates a validated and typed environment object.
   pattern?: RegExp;
   minLength?: number;
   maxLength?: number;
-  validation?: 'arn' | 's3-bucket' | 'lambda-function-name' | ...;
 }
 ```
 
@@ -541,19 +501,10 @@ import { SQSClient } from '@aws-sdk/client-sqs';
 
 // Validate environment at module initialization (cold start)
 const env = createEnv({
-  // DynamoDB table with parsed ARN
   TABLE_ARN: { type: 'dynamodb-table-arn', required: true },
-  
-  // SQS queue with parsed ARN
   QUEUE_ARN: { type: 'sqs-queue-arn', required: true },
-  
-  // S3 bucket with validation
   BUCKET_NAME: { type: 's3-bucket-name', required: true },
-  
-  // API key (marked as secret)
   API_KEY: { type: 'string', required: true, secret: true },
-  
-  // Debug flag
   DEBUG: { type: 'boolean', default: false },
 });
 
@@ -562,32 +513,14 @@ const dynamodb = new DynamoDBClient({ region: env.aws.region });
 const sqs = new SQSClient({ region: env.aws.region });
 
 export const handler: APIGatewayProxyHandler = async (event) => {
-  // Use validated AWS resources with parsed properties
   console.log('Table name:', env.TABLE_ARN.tableName);
-  console.log('Table region:', env.TABLE_ARN.region);
   console.log('Queue name:', env.QUEUE_ARN.queueName);
-  console.log('Bucket:', env.BUCKET_NAME);
-  console.log('Function:', env.aws.functionName);
   
   return {
     statusCode: 200,
     body: JSON.stringify({ message: 'Success' }),
   };
 };
-```
-
-### With DynamoDB
-
-```typescript
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { createEnv } from '@kawaaaas/lambda-env-schema';
-
-const env = createEnv({
-  TABLE_NAME: { type: 'string', required: true },
-  AWS_REGION: { type: 'string', default: 'us-east-1' },
-});
-
-const client = new DynamoDBClient({ region: env.AWS_REGION });
 ```
 
 ### With Multiple Environments
@@ -603,10 +536,52 @@ const env = createEnv({
   TIMEOUT_MS: { type: 'number', default: 30000 },
 });
 
-// Type-safe environment check
 if (env.NODE_ENV === 'production') {
   // Production-specific logic
 }
+```
+
+---
+
+## 🚨 Error Handling
+
+```typescript
+import { createEnv, EnvironmentValidationError } from '@kawaaaas/lambda-env-schema';
+
+try {
+  const env = createEnv({
+    PORT: { type: 'number', min: 1024, max: 65535, required: true },
+    API_KEY: { type: 'string', required: true, secret: true },
+  });
+} catch (error) {
+  if (error instanceof EnvironmentValidationError) {
+    console.error('Validation failed:', error.message);
+    console.error('Errors:', error.errors);
+    // error.errors: Array<{ key: string; message: string }>
+    process.exit(1);
+  }
+}
+```
+
+### Error Messages
+
+The library provides clear, actionable error messages:
+
+```
+// Missing required variable
+❌ Environment variable "API_KEY" is required but not set
+
+// Invalid type coercion
+❌ Environment variable "PORT" must be a valid number, got "abc"
+
+// Out of range
+❌ Environment variable "PORT" must be between 1024 and 65535, got 80
+
+// Pattern mismatch
+❌ Environment variable "EMAIL" does not match the required pattern
+
+// Invalid enum value
+❌ Environment variable "LOG_LEVEL" must be one of: debug, info, warn, error
 ```
 
 ---
@@ -633,9 +608,13 @@ export const handler = async (event) => {
 
 ```typescript
 const env = createEnv({
-  API_KEY: { type: 'string', required: true, secret: true }, // ✅
-  DATABASE_PASSWORD: { type: 'string', required: true, secret: true }, // ✅
-  TABLE_NAME: { type: 'string', required: true }, // ✅ Not a secret
+  // ✅ Secrets: API keys, passwords, tokens
+  API_KEY: { type: 'string', required: true, secret: true },
+  DATABASE_PASSWORD: { type: 'string', required: true, secret: true },
+  
+  // ✅ Not secrets: table names, regions, feature flags
+  TABLE_NAME: { type: 'string', required: true },
+  ENABLE_CACHE: { type: 'boolean', default: false },
 });
 ```
 
@@ -665,456 +644,20 @@ const env = createEnv({
 });
 ```
 
----
-
-## 🔷 TypeScript Support
-
-This library is written in TypeScript and provides full type safety:
-
-```typescript
-const env = createEnv({
-  PORT: { type: 'number', default: 3000 },
-  API_KEY: { type: 'string', required: true },
-  DEBUG: { type: 'boolean', default: false },
-});
-
-// ✅ Type-safe access
-const port: number = env.PORT;
-const apiKey: string = env.API_KEY;
-const debug: boolean = env.DEBUG;
-
-// ❌ TypeScript error: Property 'UNKNOWN' does not exist
-const unknown = env.UNKNOWN;
-```
-
----
-
-## 🔧 Advanced Usage
-
-### Custom Validation
-
-Combine built-in validation with custom logic:
-
-```typescript
-const env = createEnv({
-  API_ENDPOINT: { 
-    type: 'string', 
-    pattern: /^https:\/\//,
-    required: true 
-  },
-});
-
-// Additional custom validation
-if (!env.API_ENDPOINT.endsWith('/api')) {
-  throw new Error('API_ENDPOINT must end with /api');
-}
-```
-
-### Environment-specific Configuration
-
-```typescript
-const baseSchema = {
-  LOG_LEVEL: { type: 'string', default: 'info' },
-  API_KEY: { type: 'string', required: true, secret: true },
-} as const;
-
-const developmentSchema = {
-  ...baseSchema,
-  DEBUG: { type: 'boolean', default: true },
-  MOCK_EXTERNAL_APIS: { type: 'boolean', default: true },
-} as const;
-
-const productionSchema = {
-  ...baseSchema,
-  DEBUG: { type: 'boolean', default: false },
-  SENTRY_DSN: { type: 'string', required: true, secret: true },
-} as const;
-
-const env = createEnv(
-  process.env.NODE_ENV === 'production' 
-    ? productionSchema 
-    : developmentSchema
-);
-```
-
-### Testing Strategies
-
-```typescript
-// test/env.test.ts
-import { describe, it, expect, beforeEach } from 'vitest';
-import { createEnv, EnvironmentValidationError } from '@kawaaaas/lambda-env-schema';
-
-describe('Environment validation', () => {
-  beforeEach(() => {
-    // Reset environment
-    delete process.env.API_KEY;
-  });
-
-  it('should validate required variables', () => {
-    process.env.API_KEY = 'test-key';
-    
-    const env = createEnv({
-      API_KEY: { type: 'string', required: true },
-    });
-    
-    expect(env.API_KEY).toBe('test-key');
-  });
-
-  it('should throw on missing required variables', () => {
-    expect(() => {
-      createEnv({
-        API_KEY: { type: 'string', required: true },
-      });
-    }).toThrow(EnvironmentValidationError);
-  });
-});
-```
-
----
-
-## 🚨 Error Handling
-
-### Validation Errors
-
-```typescript
-import { createEnv, EnvironmentValidationError } from '@kawaaaas/lambda-env-schema';
-
-try {
-  const env = createEnv({
-    PORT: { type: 'number', min: 1024, max: 65535, required: true },
-    API_KEY: { type: 'string', required: true, secret: true },
-  });
-} catch (error) {
-  if (error instanceof EnvironmentValidationError) {
-    console.error('Environment validation failed:');
-    console.error('Message:', error.message);
-    console.error('Errors:', error.errors);
-    
-    // error.errors structure:
-    // [
-    //   { key: 'PORT', message: 'Environment variable "PORT" is required but not set' },
-    //   { key: 'API_KEY', message: 'Environment variable "API_KEY" is required but not set' }
-    // ]
-    
-    // In Lambda, this will prevent the function from starting
-    process.exit(1);
-  }
-}
-```
-
-### Error Messages
-
-The library provides clear, actionable error messages:
-
-```typescript
-// Missing required variable
-// ❌ Environment variable "API_KEY" is required but not set
-
-// Invalid type coercion
-// ❌ Environment variable "PORT" must be a valid number, got "abc"
-
-// Out of range
-// ❌ Environment variable "PORT" must be between 1024 and 65535, got 80
-
-// Pattern mismatch
-// ❌ Environment variable "EMAIL" does not match the required pattern
-
-// Invalid enum value
-// ❌ Environment variable "LOG_LEVEL" must be one of: debug, info, warn, error
-
-// Array length violation
-// ❌ Environment variable "TAGS" must have at least 1 items, got 0
-```
-
-### Secret Masking
-
-Sensitive values are automatically masked in error messages:
-
-```typescript
-// Environment: API_KEY=super-secret-key-12345
-
-const env = createEnv({
-  API_KEY: { type: 'string', required: true, secret: true },
-  DATABASE_URL: { type: 'string', required: true, secret: true },
-});
-
-// If validation fails, the actual values are never logged:
-// ❌ Environment variable "API_KEY" is required but not set
-// (not: "API_KEY with value 'super-secret-key-12345' is invalid")
-```
-
----
-
-## 🎓 Best Practices
-
-### 1. Validate at Module Initialization
-
-**✅ Good: Validate during cold start**
-
-```typescript
-// handler.ts
-import { createEnv } from '@kawaaaas/lambda-env-schema';
-
-// Validation happens once during cold start
-const env = createEnv({
-  TABLE_NAME: { type: 'string', required: true },
-  API_KEY: { type: 'string', required: true, secret: true },
-});
-
-export const handler = async (event) => {
-  // Use validated env here
-  console.log('Table:', env.TABLE_NAME);
-};
-```
-
-**❌ Bad: Validate on every invocation**
-
-```typescript
-export const handler = async (event) => {
-  // This runs on EVERY invocation - wasteful!
-  const env = createEnv({
-    TABLE_NAME: { type: 'string', required: true },
-  });
-};
-```
-
-### 2. Mark Secrets Appropriately
-
-```typescript
-const env = createEnv({
-  // ✅ Secrets: API keys, passwords, tokens
-  API_KEY: { type: 'string', required: true, secret: true },
-  DATABASE_PASSWORD: { type: 'string', required: true, secret: true },
-  JWT_SECRET: { type: 'string', required: true, secret: true },
-  
-  // ✅ Not secrets: table names, regions, feature flags
-  TABLE_NAME: { type: 'string', required: true },
-  AWS_REGION: { type: 'string', default: 'us-east-1' },
-  ENABLE_CACHE: { type: 'boolean', default: false },
-});
-```
-
-### 3. Use Type Inference
-
-**✅ Good: Let TypeScript infer the type**
-
-```typescript
-const env = createEnv({
-  PORT: { type: 'number', default: 3000 },
-  API_KEY: { type: 'string', required: true },
-});
-
-// TypeScript knows: env.PORT is number, env.API_KEY is string
-```
-
-**❌ Bad: Manual type annotation (redundant)**
-
-```typescript
-const env: { PORT: number; API_KEY: string } = createEnv({
-  PORT: { type: 'number', default: 3000 },
-  API_KEY: { type: 'string', required: true },
-});
-```
-
-### 4. Provide Defaults for Optional Values
-
-```typescript
-const env = createEnv({
-  // ✅ Good: Clear default value
-  TIMEOUT_MS: { type: 'number', default: 30000 },
-  LOG_LEVEL: { type: 'string', default: 'info' },
-  ENABLE_CACHE: { type: 'boolean', default: false },
-  
-  // ⚠️ Acceptable: Explicitly optional (use with caution)
-  CACHE_TTL: { type: 'number' }, // number | undefined
-  OPTIONAL_FEATURE: { type: 'string' }, // string | undefined
-});
-```
-
 ### 5. Use Enums for Fixed Values
 
 ```typescript
 const env = createEnv({
-  // ✅ Good: Type-safe enum
   LOG_LEVEL: { 
     type: 'string', 
     enum: ['debug', 'info', 'warn', 'error'] as const,
     default: 'info'
   },
-  
-  NODE_ENV: { 
-    type: 'string', 
-    enum: ['development', 'staging', 'production'] as const,
-    default: 'development'
-  },
 });
 
-// TypeScript knows the exact values
 if (env.LOG_LEVEL === 'debug') { // ✅ Type-safe
   // ...
 }
-```
-
-### 6. Organize by Feature
-
-```typescript
-// ✅ Good: Group related variables
-const env = createEnv({
-  // Database
-  DB_HOST: { type: 'string', required: true },
-  DB_PORT: { type: 'number', default: 5432 },
-  DB_NAME: { type: 'string', required: true },
-  DB_PASSWORD: { type: 'string', required: true, secret: true },
-  
-  // Cache
-  CACHE_ENABLED: { type: 'boolean', default: false },
-  CACHE_TTL: { type: 'number', default: 3600 },
-  
-  // External APIs
-  STRIPE_API_KEY: { type: 'string', required: true, secret: true },
-  SENDGRID_API_KEY: { type: 'string', required: true, secret: true },
-});
-```
-
-### 7. Document Complex Schemas
-
-```typescript
-const env = createEnv({
-  // API endpoint for external service
-  // Format: https://api.example.com/v1
-  API_ENDPOINT: { 
-    type: 'string', 
-    pattern: /^https:\/\/.+\/v\d+$/,
-    required: true,
-    description: 'External API endpoint (must be HTTPS with version)'
-  },
-  
-  // Comma-separated list of allowed CORS origins
-  // Example: https://app.example.com,https://admin.example.com
-  ALLOWED_ORIGINS: { 
-    type: 'array', 
-    itemType: 'string',
-    required: true,
-    description: 'Allowed CORS origins'
-  },
-});
-```
-
----
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-**Issue: "Module not found" error**
-
-```bash
-# Make sure the package is installed
-npm install @kawaaaas/lambda-env-schema
-
-# Check your package.json
-cat package.json | grep lambda-env-schema
-```
-
-**Issue: Type inference not working**
-
-```typescript
-// ❌ Bad: Missing 'as const'
-const schema = {
-  LOG_LEVEL: { type: 'string', enum: ['debug', 'info'] }
-};
-
-// ✅ Good: Use 'as const' for literal types
-const schema = {
-  LOG_LEVEL: { type: 'string', enum: ['debug', 'info'] as const }
-} as const;
-```
-
-**Issue: Validation passes but value is undefined**
-
-```typescript
-// ❌ Problem: Optional without default
-const env = createEnv({
-  CACHE_TTL: { type: 'number' } // Can be undefined!
-});
-
-console.log(env.CACHE_TTL); // undefined if not set
-
-// ✅ Solution: Add default or check for undefined
-const env = createEnv({
-  CACHE_TTL: { type: 'number', default: 3600 }
-});
-
-// Or handle undefined
-if (env.CACHE_TTL !== undefined) {
-  // Use env.CACHE_TTL
-}
-```
-
-**Issue: Array not splitting correctly**
-
-```typescript
-// Environment: TAGS=tag1,tag2,tag3
-
-// ❌ Problem: Wrong separator
-const env = createEnv({
-  TAGS: { type: 'array', itemType: 'string', separator: ';' }
-});
-console.log(env.TAGS); // ['tag1,tag2,tag3'] - not split!
-
-// ✅ Solution: Use correct separator (default is ',')
-const env = createEnv({
-  TAGS: { type: 'array', itemType: 'string' } // separator defaults to ','
-});
-console.log(env.TAGS); // ['tag1', 'tag2', 'tag3']
-```
-
-**Issue: JSON parsing fails**
-
-```typescript
-// Environment: CONFIG={"key":"value"}
-
-// ✅ Make sure JSON is valid
-const env = createEnv({
-  CONFIG: { type: 'json', required: true }
-});
-
-// If parsing fails, check the JSON format:
-// - Use double quotes, not single quotes
-// - Escape special characters
-// - Validate JSON with: echo $CONFIG | jq
-```
-
-### Lambda-specific Issues
-
-**Issue: AWS environment variables not available locally**
-
-```typescript
-const env = createEnv({
-  TABLE_NAME: { type: 'string', required: true },
-});
-
-// AWS Lambda variables are undefined in local development
-console.log(env.aws.functionName); // undefined locally
-
-// ✅ Solution: Check before using
-if (env.aws.functionName) {
-  console.log('Running in Lambda:', env.aws.functionName);
-} else {
-  console.log('Running locally');
-}
-```
-
-**Issue: Cold start validation failures**
-
-```typescript
-// If validation fails during cold start, Lambda won't start
-// Check CloudWatch Logs for validation errors
-
-// ✅ Solution: Test locally first
-// 1. Create .env file with all required variables
-// 2. Run locally: node dist/handler.js
-// 3. Fix any validation errors before deploying
 ```
 
 ---
@@ -1150,9 +693,6 @@ const env2 = createEnv({
 });
 
 // env2.LOG_LEVEL has type: 'debug' | 'info' | 'warn' | 'error'
-if (env2.LOG_LEVEL === 'debug') { // ✅ Type-safe
-  // ...
-}
 ```
 
 ### Advanced Type Inference
@@ -1160,24 +700,87 @@ if (env2.LOG_LEVEL === 'debug') { // ✅ Type-safe
 ```typescript
 import type { InferEnv } from '@kawaaaas/lambda-env-schema';
 
-// Define schema
 const schema = {
   PORT: { type: 'number', default: 3000 },
   API_KEY: { type: 'string', required: true },
   DEBUG: { type: 'boolean', default: false },
 } as const;
 
-// Infer type
 type Env = InferEnv<typeof schema>;
 // { PORT: number; API_KEY: string; DEBUG: boolean }
 
-// Use in function signatures
 function initializeApp(env: Env) {
   console.log('Starting on port:', env.PORT);
 }
 
 const env = createEnv(schema);
 initializeApp(env); // ✅ Type-safe
+```
+
+---
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+**Issue: Type inference not working**
+
+```typescript
+// ❌ Bad: Missing 'as const'
+const schema = {
+  LOG_LEVEL: { type: 'string', enum: ['debug', 'info'] }
+};
+
+// ✅ Good: Use 'as const' for literal types
+const schema = {
+  LOG_LEVEL: { type: 'string', enum: ['debug', 'info'] as const }
+} as const;
+```
+
+**Issue: Validation passes but value is undefined**
+
+```typescript
+// ❌ Problem: Optional without default
+const env = createEnv({
+  CACHE_TTL: { type: 'number' } // Can be undefined!
+});
+
+// ✅ Solution: Add default or check for undefined
+const env = createEnv({
+  CACHE_TTL: { type: 'number', default: 3600 }
+});
+```
+
+**Issue: Array not splitting correctly**
+
+```typescript
+// Environment: TAGS=tag1,tag2,tag3
+
+// ❌ Problem: Wrong separator
+const env = createEnv({
+  TAGS: { type: 'array', itemType: 'string', separator: ';' }
+});
+
+// ✅ Solution: Use correct separator (default is ',')
+const env = createEnv({
+  TAGS: { type: 'array', itemType: 'string' }
+});
+```
+
+**Issue: AWS environment variables not available locally**
+
+```typescript
+const env = createEnv({
+  TABLE_NAME: { type: 'string', required: true },
+});
+
+// AWS Lambda variables are undefined in local development
+console.log(env.aws.functionName); // undefined locally
+
+// ✅ Solution: Check before using
+if (env.aws.functionName) {
+  console.log('Running in Lambda:', env.aws.functionName);
+}
 ```
 
 ---
