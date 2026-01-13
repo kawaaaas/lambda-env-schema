@@ -5,8 +5,10 @@
 **Zero-dependency, strictly typed environment variable validator tailored for AWS Lambda**
 
 [![npm version](https://img.shields.io/npm/v/@kawaaaas/lambda-env-schema.svg)](https://www.npmjs.com/package/@kawaaaas/lambda-env-schema)
+[![CI](https://github.com/kawaaaas/lambda-env-schema/actions/workflows/ci.yml/badge.svg)](https://github.com/kawaaaas/lambda-env-schema/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
+[![Bundle Size](https://img.shields.io/bundlephobia/minzip/@kawaaaas/lambda-env-schema)](https://bundlephobia.com/package/@kawaaaas/lambda-env-schema)
 
 [Features](#-features) • [Installation](#-installation) • [Quick Start](#-quick-start) • [Documentation](#-documentation) • [Examples](#-examples) • [Contributing](./CONTRIBUTING.md)
 

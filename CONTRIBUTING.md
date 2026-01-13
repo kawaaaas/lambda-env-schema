@@ -128,6 +128,22 @@ lambda-env-schema/
 
 ## Development Workflow
 
+### Branch Naming Convention
+
+We follow a simple branch naming convention aligned with [Conventional Commits](https://www.conventionalcommits.org/):
+
+```
+<type>/<short-description>
+```
+
+**Branch Types:**
+- `feat/` - New features (e.g., `feat/custom-validators`)
+- `fix/` - Bug fixes (e.g., `fix/array-coercion`)
+- `docs/` - Documentation changes (e.g., `docs/api-reference`)
+- `refactor/` - Code refactoring (e.g., `refactor/error-handling`)
+- `test/` - Test additions or updates (e.g., `test/edge-cases`)
+- `chore/` - Maintenance tasks (e.g., `chore/update-deps`)
+
 ### 1. Create a Branch
 
 ```bash
@@ -136,8 +152,10 @@ git fetch upstream
 git checkout main
 git merge upstream/main
 
-# Create a feature branch
-git checkout -b feature/your-feature-name
+# Create a branch (use type prefix matching your change)
+git checkout -b feat/your-feature-name
+git checkout -b fix/issue-description
+git checkout -b docs/update-readme
 ```
 
 ### 2. Make Changes
@@ -185,7 +203,7 @@ git commit -m "test: add tests for edge cases in number coercion"
 
 ```bash
 # Push to your fork
-git push origin feature/your-feature-name
+git push origin feat/your-feature-name
 ```
 
 Then create a pull request on GitHub.
