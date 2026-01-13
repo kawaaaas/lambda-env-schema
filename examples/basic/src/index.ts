@@ -3,7 +3,7 @@
  *
  * This example demonstrates the key features:
  * - Basic type coercion (string, number, boolean, array, json)
- * - AWS Parsed Types (NEW!)
+ * - AWS Parsed Types
  * - AWS Lambda environment access
  */
 
@@ -49,11 +49,12 @@ console.log('  ALLOWED_ORIGINS:', env.ALLOWED_ORIGINS);
 console.log('  DATABASE_CONFIG:', env.DATABASE_CONFIG);
 console.log();
 
+
 // =============================================================================
-// Example 2: AWS Parsed Types (NEW!)
+// Example 2: AWS Parsed Types 
 // =============================================================================
 
-console.log('📦 Example 2: AWS Parsed Types (NEW!)');
+console.log('📦 Example 2: AWS Parsed Types');
 console.log('-'.repeat(60));
 
 const awsEnv = createEnv({
