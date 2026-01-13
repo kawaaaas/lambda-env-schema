@@ -42,7 +42,7 @@ const env = createEnv({
 });
 
 console.log('✅ Basic types validated!');
-console.log('  API_KEY:', env.API_KEY.substring(0, 3) + '***');
+console.log('  API_KEY:', `${env.API_KEY.substring(0, 3)}***`);
 console.log('  PORT:', env.PORT, '(type:', typeof env.PORT, ')');
 console.log('  DEBUG:', env.DEBUG, '(type:', typeof env.DEBUG, ')');
 console.log('  ALLOWED_ORIGINS:', env.ALLOWED_ORIGINS);
@@ -133,7 +133,9 @@ console.log('✨ All examples completed successfully!');
 console.log('='.repeat(60));
 console.log();
 console.log('Key features demonstrated:');
-console.log('  ✓ Automatic type coercion (string → number, boolean, array, json)');
+console.log(
+	'  ✓ Automatic type coercion (string → number, boolean, array, json)',
+);
 console.log('  ✓ AWS Parsed Types (ARNs, URLs → structured objects)');
 console.log('  ✓ Type-safe property access with auto-completion');
 console.log('  ✓ Built-in AWS Lambda environment support');
