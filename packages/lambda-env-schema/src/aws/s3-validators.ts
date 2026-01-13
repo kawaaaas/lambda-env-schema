@@ -159,7 +159,7 @@ export function isValidS3Arn(value: string): boolean {
   // Check basic ARN format first
   const match = value.match(/^arn:aws:s3:::([^/]+)(\/.*)?$/);
   if (!match) return false;
-  
+
   // Extract bucket name and validate it using ARN-specific rules
   const bucketName = match[1];
   return isValidS3ArnBucketName(bucketName);
@@ -194,15 +194,15 @@ const S3_URI_PATTERN = /^s3:\/\/([^/]+)\/(.+)$/;
 export function isValidS3Uri(value: string): boolean {
   const match = value.match(S3_URI_PATTERN);
   if (!match) return false;
-  
+
   const [, bucket, key] = match;
-  
+
   // Validate bucket name using existing validator
   if (!isValidS3BucketName(bucket)) return false;
-  
+
   // Validate key is not empty
   if (!key || key.length === 0) return false;
-  
+
   return true;
 }
 
@@ -226,7 +226,7 @@ export function isValidS3Uri(value: string): boolean {
  */
 export function parseS3Uri(value: string): ParsedS3Uri | null {
   if (!isValidS3Uri(value)) return null;
-  
+
   const match = value.match(S3_URI_PATTERN);
   if (!match) return null;
 

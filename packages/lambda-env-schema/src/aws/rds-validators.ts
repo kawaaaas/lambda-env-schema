@@ -190,7 +190,16 @@ export function parseRDSEndpoint(value: string): ParsedRDSEndpoint | null {
   const region = extractRegionFromRDSEndpoint(hostname);
   if (!region) return null;
 
-  const port = portStr ? Number.parseInt(portStr, 10) : undefined;
+  // Validate port range if specified
+  let port: number | undefined;
+  if (portStr) {
+    port = Number.parseInt(portStr, 10);
+    // Port must be in valid range (1-65535)
+    if (port < 1 || port > 65535) {
+      return null;
+    }
+  }
+
   const socketAddress = port ? `${hostname}:${port}` : `${hostname}:5432`;
 
   return {

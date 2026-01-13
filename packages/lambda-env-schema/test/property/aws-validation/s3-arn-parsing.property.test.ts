@@ -26,10 +26,10 @@ describe('S3 ARN parsing property tests', () => {
         // Ensure it starts and ends with alphanumeric
         let result = name;
         if (!/^[a-z0-9]/.test(result)) {
-          result = 'a' + result.slice(1);
+          result = `a${result.slice(1)}`;
         }
         if (!/[a-z0-9]$/.test(result)) {
-          result = result.slice(0, -1) + 'a';
+          result = `${result.slice(0, -1)}a`;
         }
         return result;
       });
@@ -40,7 +40,9 @@ describe('S3 ARN parsing property tests', () => {
       .filter((key) => key.length > 0 && !key.startsWith('/'));
 
     // Generator for bucket-only S3 ARNs
-    const bucketOnlyArn = validBucketName.map((bucket) => `arn:aws:s3:::${bucket}`);
+    const bucketOnlyArn = validBucketName.map(
+      (bucket) => `arn:aws:s3:::${bucket}`
+    );
 
     // Generator for object S3 ARNs
     const objectArn = fc
@@ -54,7 +56,7 @@ describe('S3 ARN parsing property tests', () => {
       fc.assert(
         fc.property(validS3Arn, (arn) => {
           const parsed = parseS3Arn(arn);
-          
+
           expect(parsed).not.toBeNull();
           if (parsed) {
             // Extract expected bucket name from ARN
@@ -73,7 +75,7 @@ describe('S3 ARN parsing property tests', () => {
       fc.assert(
         fc.property(objectArn, (arn) => {
           const parsed = parseS3Arn(arn);
-          
+
           expect(parsed).not.toBeNull();
           if (parsed) {
             // Extract expected key from ARN
@@ -93,7 +95,7 @@ describe('S3 ARN parsing property tests', () => {
       fc.assert(
         fc.property(bucketOnlyArn, (arn) => {
           const parsed = parseS3Arn(arn);
-          
+
           expect(parsed).not.toBeNull();
           if (parsed) {
             expect(parsed.key).toBeUndefined();
@@ -108,7 +110,7 @@ describe('S3 ARN parsing property tests', () => {
       fc.assert(
         fc.property(validS3Arn, (arn) => {
           const parsed = parseS3Arn(arn);
-          
+
           expect(parsed).not.toBeNull();
           if (parsed) {
             expect(parsed.value).toBe(arn);
@@ -131,7 +133,9 @@ describe('S3 ARN parsing property tests', () => {
         fc.constant('arn:aws:s3:::my--bucket'), // consecutive hyphens
         fc.constant('arn:aws:s3:::192.168.1.1'), // IP address format
         // Not an ARN at all
-        fc.string().filter((s) => !s.startsWith('arn:aws:s3:::'))
+        fc
+          .string()
+          .filter((s) => !s.startsWith('arn:aws:s3:::'))
       );
 
       fc.assert(

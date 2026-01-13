@@ -59,7 +59,7 @@ describe('S3 URI parsing property tests', () => {
       fc.assert(
         fc.property(validS3Uri, (uri) => {
           const parsed = parseS3Uri(uri);
-          
+
           expect(parsed).not.toBeNull();
           if (parsed) {
             // Extract expected bucket from URI
@@ -78,7 +78,7 @@ describe('S3 URI parsing property tests', () => {
       fc.assert(
         fc.property(validS3Uri, (uri) => {
           const parsed = parseS3Uri(uri);
-          
+
           expect(parsed).not.toBeNull();
           if (parsed) {
             // Extract expected key from URI
@@ -96,9 +96,13 @@ describe('S3 URI parsing property tests', () => {
     it('when value does not match the pattern, validation error is collected', () => {
       const invalidS3Uris = fc.oneof(
         // Missing s3:// scheme
-        fc.tuple(validBucketName, validObjectKey).map(([bucket, key]) => `${bucket}/${key}`),
+        fc
+          .tuple(validBucketName, validObjectKey)
+          .map(([bucket, key]) => `${bucket}/${key}`),
         // Wrong scheme
-        fc.tuple(validBucketName, validObjectKey).map(([bucket, key]) => `https://${bucket}/${key}`),
+        fc
+          .tuple(validBucketName, validObjectKey)
+          .map(([bucket, key]) => `https://${bucket}/${key}`),
         // Missing key (bucket only)
         validBucketName.map((bucket) => `s3://${bucket}`),
         // Empty key
@@ -110,7 +114,9 @@ describe('S3 URI parsing property tests', () => {
         fc.constant('s3://my--bucket/key'), // consecutive hyphens in bucket
         fc.constant('s3://192.168.1.1/key'), // IP address format bucket
         // Not a URI at all
-        fc.string().filter((s) => !s.startsWith('s3://'))
+        fc
+          .string()
+          .filter((s) => !s.startsWith('s3://'))
       );
 
       fc.assert(
@@ -126,7 +132,7 @@ describe('S3 URI parsing property tests', () => {
       fc.assert(
         fc.property(validS3Uri, (uri) => {
           const parsed = parseS3Uri(uri);
-          
+
           expect(parsed).not.toBeNull();
           if (parsed) {
             expect(parsed.value).toBe(uri);
