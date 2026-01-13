@@ -133,7 +133,10 @@ import type { APIGatewayProxyHandler } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { SQSClient } from '@aws-sdk/client-sqs';
 
-// Validate environment at module initialization (cold start)
+// ⚠️ IMPORTANT: Call createEnv OUTSIDE the handler!
+// This ensures validation runs during cold start (initialization phase),
+// not during request handling. Invalid config fails fast before any
+// requests are processed.
 const env = createEnv({
   // DynamoDB table with parsed ARN
   TABLE_ARN: { type: 'dynamodb-table-arn', required: true },
