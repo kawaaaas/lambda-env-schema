@@ -17,6 +17,15 @@
   ],
   "license": "MIT",
   "author": "kawaaaas",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kawaaaas/lambda-env-schema.git",
+    "directory": "packages/lambda-env-schema"
+  },
+  "bugs": {
+    "url": "https://github.com/kawaaaas/lambda-env-schema/issues"
+  },
+  "homepage": "https://github.com/kawaaaas/lambda-env-schema#readme",
   "type": "module",
   "main": "dist/index.cjs",
   "module": "dist/index.js",
