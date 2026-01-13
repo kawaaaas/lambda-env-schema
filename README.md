@@ -102,9 +102,9 @@ const env = createEnv({
   // JSON (auto-parsed)
   DATABASE_CONFIG: { type: 'json', required: true },
   
-  // AWS-specific validation
-  QUEUE_ARN: { type: 'string', validation: 'sqs-queue-arn', required: true },
-  BUCKET_NAME: { type: 'string', validation: 's3-bucket-name', required: true },
+  // AWS-specific validation (parsed types)
+  QUEUE_ARN: { type: 'sqs-queue-arn', required: true },
+  TABLE_ARN: { type: 'dynamodb-table-arn', required: true },
 });
 
 // Type-safe access with auto-completion
@@ -114,9 +114,9 @@ console.log(env.DEBUG); // boolean
 console.log(env.ALLOWED_ORIGINS); // string[]
 console.log(env.DATABASE_CONFIG); // unknown
 
-// AWS-validated resources
-console.log(env.QUEUE_ARN); // string (validated SQS ARN format)
-console.log(env.BUCKET_NAME); // string (validated S3 bucket name)
+// AWS-validated resources (parsed types)
+console.log(env.QUEUE_ARN.queueName); // string (parsed from ARN)
+console.log(env.TABLE_ARN.tableName); // string (parsed from ARN)
 
 // Access AWS Lambda environment variables
 console.log(env.aws.region); // string | undefined
@@ -133,14 +133,14 @@ import { SQSClient } from '@aws-sdk/client-sqs';
 
 // Validate environment at module initialization (cold start)
 const env = createEnv({
-  // DynamoDB table with ARN validation
-  TABLE_ARN: { type: 'string', validation: 'dynamodb-table-arn', required: true },
+  // DynamoDB table with parsed ARN
+  TABLE_ARN: { type: 'dynamodb-table-arn', required: true },
   
-  // SQS queue with ARN validation
-  QUEUE_ARN: { type: 'string', validation: 'sqs-queue-arn', required: true },
+  // SQS queue with parsed ARN
+  QUEUE_ARN: { type: 'sqs-queue-arn', required: true },
   
-  // S3 bucket with bucket name validation
-  BUCKET_NAME: { type: 'string', validation: 's3-bucket-name', required: true },
+  // S3 bucket with validation
+  BUCKET_NAME: { type: 's3-bucket-name', required: true },
   
   // API key (marked as secret)
   API_KEY: { type: 'string', required: true, secret: true },
@@ -154,9 +154,10 @@ const dynamodb = new DynamoDBClient({ region: env.aws.region });
 const sqs = new SQSClient({ region: env.aws.region });
 
 export const handler: APIGatewayProxyHandler = async (event) => {
-  // Use validated AWS resources
-  console.log('Table ARN:', env.TABLE_ARN);
-  console.log('Queue ARN:', env.QUEUE_ARN);
+  // Use validated AWS resources with parsed properties
+  console.log('Table name:', env.TABLE_ARN.tableName);
+  console.log('Table region:', env.TABLE_ARN.region);
+  console.log('Queue name:', env.QUEUE_ARN.queueName);
   console.log('Bucket:', env.BUCKET_NAME);
   console.log('Function:', env.aws.functionName);
   
@@ -259,6 +260,14 @@ const env = createEnv({
     required: true
   },
   
+  // String with length constraints
+  USERNAME: { 
+    type: 'string', 
+    minLength: 3, 
+    maxLength: 20,
+    required: true
+  },
+  
   // Number with range
   PORT: { 
     type: 'number', 
@@ -279,35 +288,88 @@ const env = createEnv({
 
 ### AWS-Specific Validation
 
-Validate AWS resource identifiers with 30+ built-in validators:
+Validate AWS resource identifiers with 30+ built-in validators. AWS types come in two flavors:
 
+**Validation-only types** (return string):
 ```typescript
 const env = createEnv({
   // Identity & Access
-  AWS_REGION: { type: 'string', validation: 'aws-region', required: true },
-  AWS_ACCOUNT_ID: { type: 'string', validation: 'aws-account-id', required: true },
-  ROLE_ARN: { type: 'string', validation: 'iam-role-arn', required: true },
+  AWS_REGION: { type: 'aws-region', required: true },
+  AWS_ACCOUNT_ID: { type: 'aws-account-id', required: true },
   
   // Storage
-  BUCKET_NAME: { type: 'string', validation: 's3-bucket-name', required: true },
-  S3_ARN: { type: 'string', validation: 's3-arn', required: true },
+  BUCKET_NAME: { type: 's3-bucket-name', required: true },
   
   // Database
-  TABLE_NAME: { type: 'string', validation: 'dynamodb-table-name', required: true },
-  TABLE_ARN: { type: 'string', validation: 'dynamodb-table-arn', required: true },
+  TABLE_NAME: { type: 'dynamodb-table-name', required: true },
+  RDS_CLUSTER: { type: 'rds-cluster-id', required: true },
   
-  // Messaging
-  QUEUE_URL: { type: 'string', validation: 'sqs-queue-url', required: true },
-  QUEUE_ARN: { type: 'string', validation: 'sqs-queue-arn', required: true },
-  TOPIC_ARN: { type: 'string', validation: 'sns-topic-arn', required: true },
+  // Compute
+  FUNCTION_NAME: { type: 'lambda-function-name', required: true },
   
-  // Security
-  KMS_KEY_ID: { type: 'string', validation: 'kms-key-id', required: true },
-  SECRET_ARN: { type: 'string', validation: 'secrets-manager-arn', required: true },
+  // Networking
+  VPC_ID: { type: 'vpc-id', required: true },
+  SUBNET_ID: { type: 'subnet-id', required: true },
+  SECURITY_GROUP: { type: 'security-group-id', required: true },
+  INSTANCE_ID: { type: 'ec2-instance-id', required: true },
+  
+  // Other Services
+  EVENT_BUS: { type: 'event-bus-name', required: true },
+  API_ID: { type: 'api-gateway-id', required: true },
+  DIST_ID: { type: 'cloudfront-dist-id', required: true },
+  KMS_KEY: { type: 'kms-key-id', required: true },
+  PARAM_NAME: { type: 'ssm-parameter-name', required: true },
+  USER_ARN: { type: 'iam-user-arn', required: true },
 });
+
+console.log(env.BUCKET_NAME); // string
+console.log(env.AWS_REGION); // string
 ```
 
-**Available validators:** `aws-region`, `aws-account-id`, `iam-role-arn`, `iam-user-arn`, `s3-bucket-name`, `s3-arn`, `dynamodb-table-name`, `dynamodb-table-arn`, `lambda-function-name`, `sqs-queue-url`, `sqs-queue-arn`, `sns-topic-arn`, `kms-key-id`, `kms-key-arn`, `secrets-manager-arn`, and more.
+**Parsed types** (return structured objects with extracted properties):
+```typescript
+const env = createEnv({
+  // ARNs with parsed components
+  ROLE_ARN: { type: 'iam-role-arn', required: true },
+  TABLE_ARN: { type: 'dynamodb-table-arn', required: true },
+  QUEUE_ARN: { type: 'sqs-queue-arn', required: true },
+  TOPIC_ARN: { type: 'sns-topic-arn', required: true },
+  FUNCTION_ARN: { type: 'lambda-function-arn', required: true },
+  KMS_ARN: { type: 'kms-key-arn', required: true },
+  SECRET_ARN: { type: 'secrets-manager-arn', required: true },
+  
+  // URLs and URIs with parsed components
+  QUEUE_URL: { type: 'sqs-queue-url', required: true },
+  S3_ARN: { type: 's3-arn', required: true },
+  S3_URI: { type: 's3-uri', required: true },
+  DB_ENDPOINT: { type: 'rds-endpoint', required: true },
+  
+  // Generic ARN parser
+  GENERIC_ARN: { type: 'arn', required: true },
+});
+
+// Access parsed properties
+console.log(env.ROLE_ARN.accountId); // string
+console.log(env.ROLE_ARN.roleName); // string
+console.log(env.ROLE_ARN.path); // string | undefined
+
+console.log(env.QUEUE_URL.accountId); // string
+console.log(env.QUEUE_URL.region); // string
+console.log(env.QUEUE_URL.queueName); // string
+
+console.log(env.S3_ARN.bucketName); // string
+console.log(env.S3_ARN.key); // string | undefined
+```
+
+**Available validators:**
+- **Identity & Access**: `aws-region`, `aws-account-id`, `iam-role-arn`, `iam-user-arn`
+- **Storage**: `s3-bucket-name`, `s3-arn`, `s3-uri`
+- **Database**: `dynamodb-table-name`, `dynamodb-table-arn`, `rds-cluster-id`, `rds-endpoint`
+- **Compute**: `lambda-function-name`, `lambda-function-arn`
+- **Messaging**: `sqs-queue-url`, `sqs-queue-arn`, `sns-topic-arn`
+- **Security**: `kms-key-id`, `kms-key-arn`, `secrets-manager-arn`
+- **Networking**: `vpc-id`, `subnet-id`, `security-group-id`, `ec2-instance-id`
+- **Other**: `event-bus-name`, `api-gateway-id`, `cloudfront-dist-id`, `ssm-parameter-name`, `arn`
 
 ---
 
