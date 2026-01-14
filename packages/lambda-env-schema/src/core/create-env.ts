@@ -114,6 +114,7 @@ function coerceValue(
               key,
               message: maskErrorMessage(errorMsg, value, isSecret),
               received: formatValue(value, isSecret),
+              expected: 'string',
             },
           ],
         };
@@ -132,6 +133,7 @@ function coerceValue(
               key,
               message: maskErrorMessage(errorMsg, value, isSecret),
               received: formatValue(value, isSecret),
+              expected: 'number',
             },
           ],
         };
@@ -150,6 +152,7 @@ function coerceValue(
               key,
               message: maskErrorMessage(errorMsg, value, isSecret),
               received: formatValue(value, isSecret),
+              expected: 'boolean (true/false/1/0/yes/no)',
             },
           ],
         };
@@ -169,6 +172,7 @@ function coerceValue(
               key,
               message: maskErrorMessage(errorMsg, value, isSecret),
               received: formatValue(value, isSecret),
+              expected: `array of ${schema.itemType}`,
             },
           ],
         };
@@ -187,6 +191,7 @@ function coerceValue(
               key,
               message: maskErrorMessage(errorMsg, value, isSecret),
               received: formatValue(value, isSecret),
+              expected: 'valid JSON',
             },
           ],
         };
