@@ -36,9 +36,9 @@ const env = createEnv({
 
 ### Key Benefits
 
-- 🪶 **Lightweight**: < 1KB minified - perfect for Lambda cold starts
+- 🪶 **Lightweight**: ~5KB gzipped - minimal impact on Lambda cold starts
+- � **Zereo dependencies**: No external packages
 - 🔒 **Type-safe**: Full TypeScript inference from schema to runtime
-- 🚀 **Zero dependencies**: No external packages, minimal bundle size
 - 🔐 **Secure by default**: Automatic secret masking in error logs
 - ⚡ **Lambda-optimized**: Built-in AWS Lambda environment support
 - 🎯 **Zero-config coercion**: Automatic type conversion from environment strings
@@ -49,7 +49,6 @@ const env = createEnv({
 
 | Feature | lambda-env-schema | Zod | envalid |
 |---------|-------------------|-----|---------|
-| Bundle size | **< 1KB** | ~13KB+ | ~5KB |
 | Type coercion | **Automatic** | Manual (`z.coerce`) | Automatic |
 | Lambda env vars | **Built-in** | Manual | Manual |
 | Secret masking | **Built-in** | Manual | Manual |

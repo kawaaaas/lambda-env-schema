@@ -41,7 +41,8 @@ const env = createEnv({
 - 🎯 **Zero-config coercion**: Automatic type conversion from environment strings
 - 🔐 **Secure by default**: Automatic secret masking in error logs
 - ✅ **Fail-fast**: Validation at cold start, not during request handling
-- 🚀 **Zero dependencies**: No external packages, minimal impact on cold starts
+- 🪶 **Lightweight**: ~5KB gzipped - minimal impact on Lambda cold starts
+- 🚀 **Zero dependencies**: No external packages
 - 🛡️ **Production-ready**: Battle-tested validation and error handling
 - 🎨 **Developer-friendly**: Minimal boilerplate, maximum productivity
 

@@ -59,8 +59,8 @@
     {
       "name": "Full Bundle",
       "path": "dist/index.js",
-      "limit": "8 KB",
-      "brotli": true
+      "limit": "6 KB",
+      "gzip": true
     }
   ],
   "devDependencies": {
