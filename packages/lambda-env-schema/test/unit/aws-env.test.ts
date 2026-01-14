@@ -32,14 +32,6 @@ describe('AWS_ENV_MAPPING', () => {
     expect(AWS_ENV_MAPPING.executionEnv).toBe('AWS_EXECUTION_ENV');
   });
 
-  it('maps accessKeyId to AWS_ACCESS_KEY_ID', () => {
-    expect(AWS_ENV_MAPPING.accessKeyId).toBe('AWS_ACCESS_KEY_ID');
-  });
-
-  it('maps secretAccessKey to AWS_SECRET_ACCESS_KEY', () => {
-    expect(AWS_ENV_MAPPING.secretAccessKey).toBe('AWS_SECRET_ACCESS_KEY');
-  });
-
   it('maps sessionToken to AWS_SESSION_TOKEN', () => {
     expect(AWS_ENV_MAPPING.sessionToken).toBe('AWS_SESSION_TOKEN');
   });
@@ -67,8 +59,6 @@ describe('getAWSLambdaEnv', () => {
       AWS_LAMBDA_LOG_GROUP_NAME: '/aws/lambda/my-function',
       AWS_LAMBDA_LOG_STREAM_NAME: '2024/01/01/[$LATEST]abc123',
       AWS_EXECUTION_ENV: 'AWS_Lambda_nodejs20.x',
-      AWS_ACCESS_KEY_ID: 'AKIAIOSFODNN7EXAMPLE',
-      AWS_SECRET_ACCESS_KEY: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
       AWS_SESSION_TOKEN: 'FwoGZXIvYXdzEBY...',
       AWS_LAMBDA_RUNTIME_API: '127.0.0.1:9001',
       LAMBDA_TASK_ROOT: '/var/task',
@@ -111,18 +101,6 @@ describe('getAWSLambdaEnv', () => {
       expect(aws.executionEnv).toBe('AWS_Lambda_nodejs20.x');
     });
 
-    it('returns accessKeyId from AWS_ACCESS_KEY_ID', () => {
-      const aws = getAWSLambdaEnv(mockLambdaEnv);
-      expect(aws.accessKeyId).toBe('AKIAIOSFODNN7EXAMPLE');
-    });
-
-    it('returns secretAccessKey from AWS_SECRET_ACCESS_KEY', () => {
-      const aws = getAWSLambdaEnv(mockLambdaEnv);
-      expect(aws.secretAccessKey).toBe(
-        'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY'
-      );
-    });
-
     it('returns sessionToken from AWS_SESSION_TOKEN', () => {
       const aws = getAWSLambdaEnv(mockLambdaEnv);
       expect(aws.sessionToken).toBe('FwoGZXIvYXdzEBY...');
@@ -157,8 +135,6 @@ describe('getAWSLambdaEnv', () => {
       expect(aws.logGroupName).toBeUndefined();
       expect(aws.logStreamName).toBeUndefined();
       expect(aws.executionEnv).toBeUndefined();
-      expect(aws.accessKeyId).toBeUndefined();
-      expect(aws.secretAccessKey).toBeUndefined();
       expect(aws.sessionToken).toBeUndefined();
       expect(aws.runtimeApi).toBeUndefined();
       expect(aws.taskRoot).toBeUndefined();
