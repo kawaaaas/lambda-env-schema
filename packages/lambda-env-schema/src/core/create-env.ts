@@ -57,6 +57,26 @@ export type EnvResult<
 };
 
 /**
+ * Masks sensitive values in error messages.
+ * Replaces occurrences of the actual value with '***' when secret is true.
+ */
+function maskErrorMessage(
+  message: string,
+  value: string,
+  isSecret: boolean
+): string {
+  if (!isSecret) return message;
+  return message.replace(new RegExp(escapeRegExp(value), 'g'), '***');
+}
+
+/**
+ * Escapes special regex characters in a string.
+ */
+function escapeRegExp(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
  * Coerces a string value to the type specified in the schema.
  */
 function coerceValue(
@@ -86,12 +106,13 @@ function coerceValue(
     case 'string': {
       const result = coerceString(value);
       if (!result.success) {
+        const errorMsg = (result as { success: false; error: string }).error;
         return {
           success: false,
           errors: [
             {
               key,
-              message: (result as { success: false; error: string }).error,
+              message: maskErrorMessage(errorMsg, value, isSecret),
               received: formatValue(value, isSecret),
             },
           ],
@@ -103,12 +124,13 @@ function coerceValue(
     case 'number': {
       const result = coerceNumber(value);
       if (!result.success) {
+        const errorMsg = (result as { success: false; error: string }).error;
         return {
           success: false,
           errors: [
             {
               key,
-              message: (result as { success: false; error: string }).error,
+              message: maskErrorMessage(errorMsg, value, isSecret),
               received: formatValue(value, isSecret),
             },
           ],
@@ -120,12 +142,13 @@ function coerceValue(
     case 'boolean': {
       const result = coerceBoolean(value);
       if (!result.success) {
+        const errorMsg = (result as { success: false; error: string }).error;
         return {
           success: false,
           errors: [
             {
               key,
-              message: (result as { success: false; error: string }).error,
+              message: maskErrorMessage(errorMsg, value, isSecret),
               received: formatValue(value, isSecret),
             },
           ],
@@ -138,12 +161,13 @@ function coerceValue(
       const separator = schema.separator ?? ',';
       const result = coerceArray(value, schema.itemType, separator);
       if (!result.success) {
+        const errorMsg = (result as { success: false; error: string }).error;
         return {
           success: false,
           errors: [
             {
               key,
-              message: (result as { success: false; error: string }).error,
+              message: maskErrorMessage(errorMsg, value, isSecret),
               received: formatValue(value, isSecret),
             },
           ],
@@ -155,12 +179,13 @@ function coerceValue(
     case 'json': {
       const result = coerceJson(value);
       if (!result.success) {
+        const errorMsg = (result as { success: false; error: string }).error;
         return {
           success: false,
           errors: [
             {
               key,
-              message: (result as { success: false; error: string }).error,
+              message: maskErrorMessage(errorMsg, value, isSecret),
               received: formatValue(value, isSecret),
             },
           ],
